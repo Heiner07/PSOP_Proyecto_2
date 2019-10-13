@@ -738,6 +738,7 @@ public class JFVentanaPrincipal extends javax.swing.JFrame {
         if(archivo!=null){
             rutaArchivo=archivo.getPath();
             archivoCargado=true;
+            cpu.cargarPrograma(rutaArchivo);
             //Leer los procesos del archivo cargado...
             
         }

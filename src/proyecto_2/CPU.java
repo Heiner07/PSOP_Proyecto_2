@@ -41,6 +41,11 @@ public class CPU {
     
     static List<Trabajo> colaImprimir1,colaImprimir2;
 
+    
+    
+    
+    
+    
     /* Hilos de Control */
     private Timer timerControlColasNucleos, timerControlMemoriaVirtual,timerControlProcesos;
     
@@ -321,7 +326,7 @@ public class CPU {
         }return null;
     }
     
-    public List<String> cargarProgramas(List<String> archivos){
+    /*public List<String> cargarProgramas(List<String> archivos){
         int cantidadArchivos=archivos.size();
         List<String> erroresLectura = new ArrayList<>(); // Almacena los archivos donde ocurrió un error;
         List<String> instrucciones;
@@ -336,7 +341,46 @@ public class CPU {
             }
         }return erroresLectura;
     }
+    */
+    public void cargarPrograma(String archivo){
+       // int cantidadArchivos=archivo.length();
+        List<String> erroresLectura = new ArrayList<>(); // Almacena los archivos donde ocurrió un error;
+        List<String> procesos_totales;
+       
+        try {
+            
+            procesos_totales=obtenerInstruccionesArchivo(archivo);
+            procesos_totales.stream().forEach((proceso) -> {
+            String proceso_validar = proceso.replace(" ","");
+            if(validar_proceso(proceso_validar)){
+                //Se agrega
+                System.out.println(proceso_validar);   
+            }else{
+                System.out.println("No se agrega el proceso");
+            //no se agrega
+            }
+
+            });
+            
+        }catch (IOException ex) {
+         }
+        
+    }
     
+    public boolean validar_proceso(String proceso){
+        String[] obtener_datos;
+        obtener_datos = proceso.split(";");
+        int cantidad_datos = 0;
+        for (String obtener_dato : obtener_datos) {
+            cantidad_datos++;
+            System.out.println(obtener_dato);
+        }
+        if(cantidad_datos == 5){
+            //Validar que el nombre no se repita
+            return true;
+        }
+        return false;
+    }
     /**
      * Crea un proceso para la lista de instrucciones indicadas.
      * Si hay espacio para crear un bloque se agregan a memoria, sino se pone a la espera. 
@@ -564,7 +608,7 @@ public class CPU {
      * @throws FileNotFoundException
      * @throws IOException 
      */
-    private List<String> obtenerIntruccionesArchivo(String archivo) throws FileNotFoundException, IOException{
+    private List<String> obtenerInstruccionesArchivo(String archivo) throws FileNotFoundException, IOException{
         String cadena;
         List<String> instrucciones = new ArrayList<>();
         
