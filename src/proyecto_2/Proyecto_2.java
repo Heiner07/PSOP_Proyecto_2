@@ -15,7 +15,8 @@ public class Proyecto_2 {
      * @param args the command line arguments
      */
     public static void main(String[] args) {
-        // TODO code application logic here
+        JFVentanaPrincipal ventana = new JFVentanaPrincipal();
+        ventana.setVisible(true);
     }
     
 }
