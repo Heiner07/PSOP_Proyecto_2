@@ -15,7 +15,6 @@ import java.util.List;
 import javax.swing.BorderFactory;
 import javax.swing.JFileChooser;
 import javax.swing.JLabel;
-import javax.swing.JOptionPane;
 import javax.swing.SwingConstants;
 import javax.swing.Timer;
 import javax.swing.filechooser.FileNameExtensionFilter;
@@ -25,12 +24,15 @@ import javax.swing.table.DefaultTableModel;
 public class JFVentanaPrincipal extends javax.swing.JFrame {
     
     PanelQuantum panelConfigCPU;
+    PanelPaginacion panelConfigPaginacion;
     String rutaArchivo;
     Boolean archivoCargado;
     Boolean iniciado;
     DefaultTableModel modeloTablaArchivos, modeloTablaMemoria, modeloTablaDisco, modeloTablaNucleo1, modeloTablaNucleo2;
     List<String> archivos;
     CPU cpu;
+    int algoritmoCPUSeleccionado;
+    int algoritmoMemoriaSeleccionado;
     
     /* Hilos de control */
     Timer timerControlNucleos, timerControlMemoria, timerControlDisco;
@@ -50,6 +52,8 @@ public class JFVentanaPrincipal extends javax.swing.JFrame {
         this.cpu=new CPU();
         this.archivoCargado=false;
         this.iniciado=false;
+        this.algoritmoCPUSeleccionado = 0;
+        this.algoritmoMemoriaSeleccionado = 0;
         configuararHilos();
         this.setLocationRelativeTo(null);
     }
@@ -79,6 +83,7 @@ public class JFVentanaPrincipal extends javax.swing.JFrame {
     
     private void configurarTablaMemoria(){
         this.modeloTablaMemoria = (DefaultTableModel) jtMemoria.getModel();
+        jtMemoria.removeAll();
         for(int i=0;i<CPU.LARGOMEMORIA;i++){
             modeloTablaMemoria.addRow(new Object[]{i,"0000"});
         }
@@ -86,6 +91,7 @@ public class JFVentanaPrincipal extends javax.swing.JFrame {
     
     private void configurarTablaDisco(){
         this.modeloTablaDisco = (DefaultTableModel) jtDisco.getModel();
+        jtDisco.removeAll();
         for(int i=0;i<CPU.LARGODISCO;i++){
             modeloTablaDisco.addRow(new Object[]{i,"0000"});
         }
@@ -288,7 +294,7 @@ public class JFVentanaPrincipal extends javax.swing.JFrame {
         btCargarArchivo = new javax.swing.JButton();
         jScrollPane1 = new javax.swing.JScrollPane();
         jtArchivos = new javax.swing.JTable();
-        btAnalizarArchivo = new javax.swing.JButton();
+        btEjecutar = new javax.swing.JButton();
         jPanel2 = new javax.swing.JPanel();
         jLabel1 = new javax.swing.JLabel();
         jScrollPane3 = new javax.swing.JScrollPane();
@@ -316,10 +322,11 @@ public class JFVentanaPrincipal extends javax.swing.JFrame {
         jLabel8 = new javax.swing.JLabel();
         cbAlgoritmoMemoria = new javax.swing.JComboBox<>();
         btUtilizarConfiguracion = new javax.swing.JButton();
-        jMenuBar1 = new javax.swing.JMenuBar();
-        btMenuConfiguracion = new javax.swing.JMenu();
-        jMenuItem1 = new javax.swing.JMenuItem();
-        jMenuItem2 = new javax.swing.JMenuItem();
+        jLabel9 = new javax.swing.JLabel();
+        jspTamanioMemoria = new javax.swing.JSpinner();
+        jLabel10 = new javax.swing.JLabel();
+        jspTamanioDisco = new javax.swing.JSpinner();
+        panelConfigAlgoritmos = new javax.swing.JPanel();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
         setTitle("Proyecto_2");
@@ -363,11 +370,11 @@ public class JFVentanaPrincipal extends javax.swing.JFrame {
             jtArchivos.getColumnModel().getColumn(0).setPreferredWidth(90);
         }
 
-        btAnalizarArchivo.setFont(new java.awt.Font("Arial", 0, 14)); // NOI18N
-        btAnalizarArchivo.setText("Analizar");
-        btAnalizarArchivo.addActionListener(new java.awt.event.ActionListener() {
+        btEjecutar.setFont(new java.awt.Font("Arial", 0, 14)); // NOI18N
+        btEjecutar.setText("Ejecutar");
+        btEjecutar.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-                btAnalizarArchivoActionPerformed(evt);
+                btEjecutarActionPerformed(evt);
             }
         });
 
@@ -381,7 +388,7 @@ public class JFVentanaPrincipal extends javax.swing.JFrame {
                     .addComponent(jScrollPane1, javax.swing.GroupLayout.DEFAULT_SIZE, 494, Short.MAX_VALUE)
                     .addGroup(jPanel1Layout.createSequentialGroup()
                         .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                            .addComponent(btAnalizarArchivo)
+                            .addComponent(btEjecutar)
                             .addComponent(btCargarArchivo))
                         .addGap(0, 0, Short.MAX_VALUE)))
                 .addContainerGap())
@@ -394,8 +401,8 @@ public class JFVentanaPrincipal extends javax.swing.JFrame {
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 160, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(btAnalizarArchivo)
-                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                .addComponent(btEjecutar)
+                .addContainerGap(40, Short.MAX_VALUE))
         );
 
         jLabel1.setFont(new java.awt.Font("Arial", 0, 14)); // NOI18N
@@ -444,7 +451,7 @@ public class JFVentanaPrincipal extends javax.swing.JFrame {
                 .addContainerGap()
                 .addComponent(jLabel1)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(jScrollPane3, javax.swing.GroupLayout.DEFAULT_SIZE, 481, Short.MAX_VALUE)
+                .addComponent(jScrollPane3)
                 .addContainerGap())
         );
 
@@ -511,7 +518,7 @@ public class JFVentanaPrincipal extends javax.swing.JFrame {
         jLabel5.setFont(new java.awt.Font("Arial", 0, 12)); // NOI18N
         jLabel5.setText("Núcleo 2");
 
-        panelNucleo1.setLayout(new java.awt.GridLayout());
+        panelNucleo1.setLayout(new java.awt.GridLayout(1, 0));
         jspNucleo1.setViewportView(panelNucleo1);
 
         panelProcesosNucleo1.setMaximumSize(new java.awt.Dimension(65, 205));
@@ -546,7 +553,7 @@ public class JFVentanaPrincipal extends javax.swing.JFrame {
 
         jScrollPane6.setViewportView(panelProcesosNucleo2);
 
-        panelNucleo2.setLayout(new java.awt.GridLayout());
+        panelNucleo2.setLayout(new java.awt.GridLayout(1, 0));
         jspNucleo2.setViewportView(panelNucleo2);
 
         javax.swing.GroupLayout jPanel9Layout = new javax.swing.GroupLayout(jPanel9);
@@ -615,6 +622,16 @@ public class JFVentanaPrincipal extends javax.swing.JFrame {
             }
         });
 
+        jLabel9.setFont(new java.awt.Font("Arial", 0, 14)); // NOI18N
+        jLabel9.setText("Tamaño Memoria");
+
+        jspTamanioMemoria.setModel(new javax.swing.SpinnerNumberModel(128, 1, null, 1));
+
+        jLabel10.setFont(new java.awt.Font("Arial", 0, 14)); // NOI18N
+        jLabel10.setText("Tamaño Disco");
+
+        jspTamanioDisco.setModel(new javax.swing.SpinnerNumberModel(1024, 1, null, 1));
+
         javax.swing.GroupLayout jPanel4Layout = new javax.swing.GroupLayout(jPanel4);
         jPanel4.setLayout(jPanel4Layout);
         jPanel4Layout.setHorizontalGroup(
@@ -622,49 +639,46 @@ public class JFVentanaPrincipal extends javax.swing.JFrame {
             .addGroup(jPanel4Layout.createSequentialGroup()
                 .addContainerGap()
                 .addGroup(jPanel4Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addGroup(jPanel4Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
-                        .addComponent(jLabel6, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                        .addComponent(jLabel7)
-                        .addComponent(cbAlgoritmoCPU, 0, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                        .addComponent(jLabel8)
-                        .addComponent(cbAlgoritmoMemoria, 0, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
-                    .addComponent(btUtilizarConfiguracion))
-                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                    .addComponent(jspTamanioDisco, javax.swing.GroupLayout.PREFERRED_SIZE, 150, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(btUtilizarConfiguracion)
+                    .addComponent(jLabel9)
+                    .addGroup(jPanel4Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING, false)
+                        .addComponent(jspTamanioMemoria, javax.swing.GroupLayout.Alignment.LEADING)
+                        .addComponent(jLabel6, javax.swing.GroupLayout.Alignment.LEADING, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                        .addComponent(jLabel7, javax.swing.GroupLayout.Alignment.LEADING)
+                        .addComponent(cbAlgoritmoCPU, javax.swing.GroupLayout.Alignment.LEADING, 0, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                        .addComponent(jLabel8, javax.swing.GroupLayout.Alignment.LEADING)
+                        .addComponent(cbAlgoritmoMemoria, javax.swing.GroupLayout.Alignment.LEADING, 0, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                    .addComponent(jLabel10))
+                .addContainerGap(12, Short.MAX_VALUE))
         );
         jPanel4Layout.setVerticalGroup(
             jPanel4Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(jPanel4Layout.createSequentialGroup()
                 .addContainerGap()
                 .addComponent(jLabel6)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(jLabel7)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(cbAlgoritmoCPU, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(jLabel8)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(cbAlgoritmoMemoria, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addGap(18, 18, 18)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(jLabel9)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(jspTamanioMemoria, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                .addComponent(jLabel10)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(jspTamanioDisco, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(btUtilizarConfiguracion)
-                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                .addContainerGap())
         );
 
-        btMenuConfiguracion.setText("Opciones");
-
-        jMenuItem1.setText("Configuración");
-        jMenuItem1.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                jMenuItem1ActionPerformed(evt);
-            }
-        });
-        btMenuConfiguracion.add(jMenuItem1);
-
-        jMenuItem2.setText("Salir");
-        btMenuConfiguracion.add(jMenuItem2);
-
-        jMenuBar1.add(btMenuConfiguracion);
-
-        setJMenuBar(jMenuBar1);
+        panelConfigAlgoritmos.setLayout(new java.awt.GridLayout(1, 2));
 
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
         getContentPane().setLayout(layout);
@@ -677,7 +691,9 @@ public class JFVentanaPrincipal extends javax.swing.JFrame {
                         .addComponent(jPanel1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                         .addComponent(jPanel4, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addGap(0, 824, Short.MAX_VALUE))
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                        .addComponent(panelConfigAlgoritmos, javax.swing.GroupLayout.PREFERRED_SIZE, 500, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addGap(0, 311, Short.MAX_VALUE))
                     .addGroup(layout.createSequentialGroup()
                         .addComponent(jPanel3, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
@@ -690,13 +706,14 @@ public class JFVentanaPrincipal extends javax.swing.JFrame {
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(layout.createSequentialGroup()
                 .addContainerGap()
-                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
-                    .addComponent(jPanel1, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                    .addComponent(jPanel4, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addComponent(panelConfigAlgoritmos, javax.swing.GroupLayout.PREFERRED_SIZE, 278, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(jPanel1, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(jPanel4, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addComponent(jPanel9, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                    .addComponent(jPanel2, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                    .addComponent(jPanel2, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                    .addComponent(jPanel9, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                     .addComponent(jPanel3, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
                 .addContainerGap())
         );
@@ -704,7 +721,7 @@ public class JFVentanaPrincipal extends javax.swing.JFrame {
         pack();
     }// </editor-fold>//GEN-END:initComponents
 
-    private void btAnalizarArchivoActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btAnalizarArchivoActionPerformed
+    private void btEjecutarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btEjecutarActionPerformed
         /*if(!archivos.isEmpty()){
             List<String> archivosAnalizar=obtenerArchivosAnalizar();
             if(!archivosAnalizar.isEmpty()){
@@ -728,7 +745,7 @@ public class JFVentanaPrincipal extends javax.swing.JFrame {
         }else{
             JOptionPane.showMessageDialog(this, "Cargue un archivo para ejecutar", "Carga de archivo",JOptionPane.WARNING_MESSAGE);
         }*/
-    }//GEN-LAST:event_btAnalizarArchivoActionPerformed
+    }//GEN-LAST:event_btEjecutarActionPerformed
 
     private void btCargarArchivoActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btCargarArchivoActionPerformed
         JFileChooser cargador=new JFileChooser();
@@ -744,36 +761,47 @@ public class JFVentanaPrincipal extends javax.swing.JFrame {
         }
     }//GEN-LAST:event_btCargarArchivoActionPerformed
 
-    private void jMenuItem1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItem1ActionPerformed
-        Configuracion configuracion = new Configuracion(this, true, iniciado);
-        configuracion.setVisible(true);
-    }//GEN-LAST:event_jMenuItem1ActionPerformed
-
     private void btUtilizarConfiguracionActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btUtilizarConfiguracionActionPerformed
-        int algoritmoCPUSeleccionado = cbAlgoritmoCPU.getSelectedIndex();
-        int algoritmoMemoriaSeleccionado = cbAlgoritmoMemoria.getSelectedIndex();
+        /* Obtengo los valores de la interfaz */
+        algoritmoCPUSeleccionado = cbAlgoritmoCPU.getSelectedIndex();
+        algoritmoMemoriaSeleccionado = cbAlgoritmoMemoria.getSelectedIndex();
+        int largoMemoria = (int)jspTamanioMemoria.getValue();
+        int largoDisco = (int)jspTamanioDisco.getValue();
+        
+        /* Actualizo los valores de la memoria y disco en el CPU */
+        cpu.establecerValoresMemoriaDisco(largoMemoria, largoDisco);
+        
+        /* Vuelvo a formar las tablas con los valores nuevos */
+        configurarTablaDisco();
+        configurarTablaMemoria();
+        
+        /* Establezco los paneles de configuración correspondientes con los algoritmos seleccionados */
+        panelConfigAlgoritmos.removeAll();
         if(algoritmoCPUSeleccionado == 2 || algoritmoCPUSeleccionado == 3){
             panelConfigCPU = new PanelQuantum();
-            panelConfigCPU.setBounds(771, 12, 231, 250);
-            this.add(panelConfigCPU);
-            panelConfigCPU.updateUI();
+            panelConfigCPU.setBounds(0, 0, 231, 250);
+            panelConfigAlgoritmos.add(panelConfigCPU);
         }else{
-            if(panelConfigCPU != null){
-                panelConfigCPU.setVisible(false);
-                this.remove(panelConfigCPU);
-                panelConfigCPU = null;
-            }
+            panelConfigCPU = null;
         }
+        
+        if(algoritmoMemoriaSeleccionado == 2){
+            panelConfigPaginacion = new PanelPaginacion();
+            panelConfigPaginacion.setBounds(0, 232, 257, 250);
+            panelConfigAlgoritmos.add(panelConfigPaginacion);
+        }else{
+            panelConfigPaginacion = null;
+        }panelConfigAlgoritmos.updateUI();
     }//GEN-LAST:event_btUtilizarConfiguracionActionPerformed
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
-    private javax.swing.JButton btAnalizarArchivo;
     private javax.swing.JButton btCargarArchivo;
-    private javax.swing.JMenu btMenuConfiguracion;
+    private javax.swing.JButton btEjecutar;
     private javax.swing.JButton btUtilizarConfiguracion;
     private javax.swing.JComboBox<String> cbAlgoritmoCPU;
     private javax.swing.JComboBox<String> cbAlgoritmoMemoria;
     private javax.swing.JLabel jLabel1;
+    private javax.swing.JLabel jLabel10;
     private javax.swing.JLabel jLabel2;
     private javax.swing.JLabel jLabel3;
     private javax.swing.JLabel jLabel4;
@@ -781,9 +809,7 @@ public class JFVentanaPrincipal extends javax.swing.JFrame {
     private javax.swing.JLabel jLabel6;
     private javax.swing.JLabel jLabel7;
     private javax.swing.JLabel jLabel8;
-    private javax.swing.JMenuBar jMenuBar1;
-    private javax.swing.JMenuItem jMenuItem1;
-    private javax.swing.JMenuItem jMenuItem2;
+    private javax.swing.JLabel jLabel9;
     private javax.swing.JPanel jPanel1;
     private javax.swing.JPanel jPanel2;
     private javax.swing.JPanel jPanel3;
@@ -796,9 +822,12 @@ public class JFVentanaPrincipal extends javax.swing.JFrame {
     private javax.swing.JScrollPane jScrollPane6;
     private javax.swing.JScrollPane jspNucleo1;
     private javax.swing.JScrollPane jspNucleo2;
+    private javax.swing.JSpinner jspTamanioDisco;
+    private javax.swing.JSpinner jspTamanioMemoria;
     private javax.swing.JTable jtArchivos;
     private javax.swing.JTable jtDisco;
     private javax.swing.JTable jtMemoria;
+    private javax.swing.JPanel panelConfigAlgoritmos;
     private javax.swing.JPanel panelNucleo1;
     private javax.swing.JPanel panelNucleo2;
     private javax.swing.JPanel panelProcesosNucleo1;

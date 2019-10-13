@@ -25,10 +25,10 @@ import javax.swing.Timer;
  */
 public class CPU {
     
-    static final int LARGOMEMORIA = 128;
-    static final int LARGODISCO = 1024;
-    static final int LARGOMEMORIAVIRTUAL = LARGOMEMORIA+LARGODISCO/2;
-    static final int LARGOPILA = 10;
+    static int LARGOMEMORIA = 128;
+    static int LARGODISCO = 1024;
+    static int LARGOMEMORIAVIRTUAL = LARGOMEMORIA+LARGODISCO/2;
+    static int LARGOPILA = 10;
     static String[] memoriaVirtual = new String[LARGOMEMORIAVIRTUAL];
     static String[] memoria = new String[LARGOMEMORIA];
     static String[] disco = new String[LARGODISCO];
@@ -62,6 +62,18 @@ public class CPU {
         inicializarDisco();
         inicializarMemoriaVirtual();
         configurarHilos();
+    }
+    
+    public void establecerValoresMemoriaDisco(int lMemoria, int lDisco){
+        LARGOMEMORIA = lMemoria;
+        LARGODISCO = lDisco;
+        LARGOMEMORIAVIRTUAL = LARGOMEMORIA+LARGODISCO/2;
+        memoriaVirtual = new String[LARGOMEMORIAVIRTUAL];
+        memoria = new String[LARGOMEMORIA];
+        disco = new String[LARGODISCO];
+        inicializaMemoria();
+        inicializarDisco();
+        inicializarMemoriaVirtual();
     }
     
     private void inicializaMemoria(){
