@@ -43,7 +43,7 @@ public class PanelPaginacion extends javax.swing.JPanel {
         jLabel7.setFont(new java.awt.Font("Arial", 0, 14)); // NOI18N
         jLabel7.setText("Establezca el tamaño de los frames");
 
-        jspinnerFrames.setModel(new javax.swing.SpinnerNumberModel(1, 1, null, 1));
+        jspinnerFrames.setModel(new javax.swing.SpinnerNumberModel(64, 1, null, 1));
 
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(this);
         this.setLayout(layout);

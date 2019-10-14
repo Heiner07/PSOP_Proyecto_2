@@ -249,25 +249,6 @@ public class JFVentanaPrincipal extends javax.swing.JFrame {
         Nucleo n1 = cpu.obtenerNucleo1();
         Nucleo n2 = cpu.obtenerNucleo2();
         
-        // Establezco los valores del núcleo 1
-        int[] registrosN1=n1.obtenerRegistros(); // Obtengo los registros del núcleo 1.
-        /*lbPCN1.setText(String.valueOf(n1.obtenerPC()));
-        lbIRN1.setText(String.valueOf(n1.obtenerCadenaInstruccionIR()));
-        lbACN1.setText(String.valueOf(registrosN1[0]));
-        lbAXN1.setText(String.valueOf(registrosN1[1]));
-        lbBXN1.setText(String.valueOf(registrosN1[2]));
-        lbCXN1.setText(String.valueOf(registrosN1[3]));
-        lbDXN1.setText(String.valueOf(registrosN1[4]));*/
-        
-        // Establezco los valores del núcleo 2
-        int[] registrosN2=n2.obtenerRegistros(); // Obtengo los registros del núcleo 2.
-        /*lbPCN2.setText(String.valueOf(n2.obtenerPC()));
-        lbIRN2.setText(String.valueOf(n2.obtenerCadenaInstruccionIR()));
-        lbACN2.setText(String.valueOf(registrosN2[0]));
-        lbAXN2.setText(String.valueOf(registrosN2[1]));
-        lbBXN2.setText(String.valueOf(registrosN2[2]));
-        lbCXN2.setText(String.valueOf(registrosN2[3]));
-        lbDXN2.setText(String.valueOf(registrosN2[4]));*/
     }
     
     private List<String> obtenerArchivosAnalizar(){

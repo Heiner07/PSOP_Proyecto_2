@@ -12,7 +12,6 @@ import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -34,9 +33,8 @@ public class CPU {
     static String[] disco = new String[LARGODISCO];
     private Nucleo nucleo1, nucleo2;
     private List<Trabajo> colaTrabajoN1, colaTrabajoN2;
-    private List<BCP> procesos;
+    private List<Proceso> procesos;
     private int idProceso;
-    private String[] parametros;
     private int procesoCola1,procesoCola2;
     
     static List<Trabajo> colaImprimir1,colaImprimir2;
@@ -177,7 +175,7 @@ public class CPU {
         if(!colaTrabajoN1.isEmpty()){              
             if(nucleo1.obtenerEstado()){              
                colaImprimir1.clear();
-               BCP procesoAEjecutar = retornarProceso(1);
+               Proceso procesoAEjecutar = retornarProceso(1);
                listadoColas(1);
                if(colaImprimir1.isEmpty()){
                    colaImprimir1 = new ArrayList<>();              
@@ -191,7 +189,7 @@ public class CPU {
         if(!colaTrabajoN2.isEmpty()){
             if(nucleo2.obtenerEstado()){
                colaImprimir2.clear();
-               BCP procesoAEjecutar = retornarProceso(2);
+               Proceso procesoAEjecutar = retornarProceso(2);
                listadoColas(2);
                if(colaImprimir2.isEmpty()){
                    colaImprimir2 = new ArrayList<>();              
@@ -211,17 +209,17 @@ public class CPU {
     */
     private void verificarProcesos(){
         for(int i=0;i<procesos.size();i++){        
-            BCP proc = procesos.get(i);
-            if(proc.obtenerInicioMemoria() == -1 && (proc.obtenerEstadoProceso()==BCP.NUEVO)){
-                int[] finInicioMemoria = determinarPosicionesMemoria(proc.obtenerInstruccionesMemoria().size());
-                if(finInicioMemoria[0] != -1){
-                    // Si hay espacio, entonces sí se cargar las instrucciones en memoria.
-                    cargarInstrucciones(finInicioMemoria[0],finInicioMemoria[1],proc.obtenerInstruccionesMemoria());
-                    agregarProcesoCola(proc.obtenerNucleo(),proc.obtenerNumeroProceso());
-                    proc.actualizarProceso(BCP.PREPARADO,finInicioMemoria[0],finInicioMemoria[1]);
-                    
-                
-                }//SALE IF2
+            Proceso proc = procesos.get(i);
+            if(proc.obtenerInicioMemoria() == -1 && (proc.obtenerEstadoProceso()==Proceso.NUEVO)){
+//                int[] finInicioMemoria = determinarPosicionesMemoria(proc.obtenerInstruccionesMemoria().size());
+//                if(finInicioMemoria[0] != -1){
+//                    // Si hay espacio, entonces sí se cargar las instrucciones en memoria.
+//                    cargarInstrucciones(finInicioMemoria[0],finInicioMemoria[1],proc.obtenerInstruccionesMemoria());
+//                    agregarProcesoCola(proc.obtenerNucleo(),proc.obtenerNumeroProceso());
+//                    proc.actualizarProceso(BCP.PREPARADO,finInicioMemoria[0],finInicioMemoria[1]);
+//                    
+//                
+//                }//SALE IF2
             
             }//SALE IF1
         }//SALE FOR
@@ -233,7 +231,7 @@ public class CPU {
      * Con respecto a numeroCola que ingresa ya sea 1 o 2
      * @param numeroCola
      * @return  un BCP*/
-    private BCP retornarProceso(int numeroCola){
+    private Proceso retornarProceso(int numeroCola){
         if(numeroCola == 1){
             int largoCola = colaTrabajoN1.size()-1;
             
@@ -243,10 +241,10 @@ public class CPU {
             int proc;
             for(;procesoCola1<=largoCola;procesoCola1++){
                 proc = colaTrabajoN1.get(procesoCola1).numeroBCP;
-                BCP procesoAEjecutar = obtenerBCP(proc);
-                if(procesoAEjecutar.obtenerPC() <= procesoAEjecutar.obtenerFinMemoria() && procesoAEjecutar.obtenerEstadoProceso()!=BCP.TERMINADO){
+                Proceso procesoAEjecutar = obtenerBCP(proc);
+                /*if(procesoAEjecutar.obtenerPC() <= procesoAEjecutar.obtenerFinMemoria() && procesoAEjecutar.obtenerEstadoProceso()!=BCP.TERMINADO){
                     return procesoAEjecutar;                   
-                }                             
+                }*/                            
             }           
         }else{
             int largoCola = colaTrabajoN2.size()-1;           
@@ -256,10 +254,10 @@ public class CPU {
             int proc;
             for(;procesoCola2<=largoCola;procesoCola2++){
                 proc = colaTrabajoN2.get(procesoCola2).numeroBCP;
-                BCP procesoAEjecutar = obtenerBCP(proc);
-                if(procesoAEjecutar.obtenerPC() <= procesoAEjecutar.obtenerFinMemoria() && procesoAEjecutar.obtenerEstadoProceso()!=BCP.TERMINADO){
+                Proceso procesoAEjecutar = obtenerBCP(proc);
+                /*if(procesoAEjecutar.obtenerPC() <= procesoAEjecutar.obtenerFinMemoria() && procesoAEjecutar.obtenerEstadoProceso()!=BCP.TERMINADO){
                     return procesoAEjecutar;                  
-                }                            
+                }*/                           
             }  
         }//SALE ELSE
         return null;
@@ -283,11 +281,11 @@ public class CPU {
             int proc;
             for(;numProceso<=largoCola;numProceso++){
                 proc = colaTrabajoN1.get(numProceso).numeroBCP;
-                BCP procesoAEjecutar = obtenerBCP(proc);
-                if(procesoAEjecutar.obtenerPC() <= procesoAEjecutar.obtenerFinMemoria() && procesoAEjecutar.obtenerEstadoProceso()!=BCP.TERMINADO){
+                Proceso procesoAEjecutar = obtenerBCP(proc);
+                /*if(procesoAEjecutar.obtenerPC() <= procesoAEjecutar.obtenerFinMemoria() && procesoAEjecutar.obtenerEstadoProceso()!=BCP.TERMINADO){
                     trabajo=new Trabajo(0, proc,memoriaVirtual[procesoAEjecutar.obtenerPC()]);
                     colaImprimir1.add(trabajo);                   
-                }                             
+                } */                            
             }            
         }else{          
             numProceso = procesoCola2;
@@ -298,11 +296,11 @@ public class CPU {
             int proc;
             for(;numProceso<=largoCola;numProceso++){
                 proc = colaTrabajoN2.get(numProceso).numeroBCP;
-                BCP procesoAEjecutar = obtenerBCP(proc);          
-                if(procesoAEjecutar.obtenerPC() <= procesoAEjecutar.obtenerFinMemoria() && procesoAEjecutar.obtenerEstadoProceso()!=BCP.TERMINADO){
+                Proceso procesoAEjecutar = obtenerBCP(proc);          
+                /*if(procesoAEjecutar.obtenerPC() <= procesoAEjecutar.obtenerFinMemoria() && procesoAEjecutar.obtenerEstadoProceso()!=BCP.TERMINADO){
                     trabajo=new Trabajo(1, proc,memoriaVirtual[procesoAEjecutar.obtenerPC()]);
                     colaImprimir2.add(trabajo);                   
-                }                              
+                } */                             
             }              
         }//SALE ELSE       
     }
@@ -323,13 +321,13 @@ public class CPU {
         return colaTrabajoN2;
     }
     
-    public List<BCP> obtenerProcesos(){
+    public List<Proceso> obtenerProcesos(){
         return procesos;
     }
     
-    private BCP obtenerBCP(int numeroBCP){
+    private Proceso obtenerBCP(int numeroBCP){
         int numeroProcesos = procesos.size();
-        BCP proceso;
+        Proceso proceso;
         for(int i=0;i<numeroProcesos;i++){
             proceso=procesos.get(i);
             if(proceso.obtenerNumeroProceso()==numeroBCP){
@@ -338,22 +336,6 @@ public class CPU {
         }return null;
     }
     
-    /*public List<String> cargarProgramas(List<String> archivos){
-        int cantidadArchivos=archivos.size();
-        List<String> erroresLectura = new ArrayList<>(); // Almacena los archivos donde ocurrió un error;
-        List<String> instrucciones;
-        
-        for(int i=0;i<cantidadArchivos;i++){
-            try {
-                instrucciones=obtenerIntruccionesArchivo(archivos.get(i));
-                              
-                crearProceso(instrucciones);
-            } catch (IOException ex) {
-                erroresLectura.add(archivos.get(i));
-            }
-        }return erroresLectura;
-    }
-    */
     public void cargarPrograma(String archivo){
        // int cantidadArchivos=archivo.length();
         List<String> erroresLectura = new ArrayList<>(); // Almacena los archivos donde ocurrió un error;
@@ -363,19 +345,20 @@ public class CPU {
             
             procesos_totales=obtenerInstruccionesArchivo(archivo);
             procesos_totales.stream().forEach((proceso) -> {
-            String proceso_validar = proceso.replace(" ","");
-            if(validar_proceso(proceso_validar)){
-                //Se agrega
-                System.out.println(proceso_validar);   
-            }else{
-                System.out.println("No se agrega el proceso");
-            //no se agrega
-            }
-
+                String proceso_validar = proceso.replace(" ","");
+                if(validar_proceso(proceso_validar)){
+                    //Se agrega
+                    System.out.println(proceso_validar);
+                    // Una vez se comprueba que los datos son correctos se crea el proceso y se agrega al núcleo respectivo
+                    // nucleo.agregarProceso(procesoNuevo);
+                }else{
+                    System.out.println("No se agrega el proceso");
+                //no se agrega
+                }
             });
             
         }catch (IOException ex) {
-         }
+        }
         
     }
     
@@ -392,175 +375,6 @@ public class CPU {
             return true;
         }
         return false;
-    }
-    /**
-     * Crea un proceso para la lista de instrucciones indicadas.
-     * Si hay espacio para crear un bloque se agregan a memoria, sino se pone a la espera. 
-     * @param instruccionesTemp
-     */
-    private void crearProceso(List<String> instruccionesTemp){
-        String[] obtenerParametros;
-        List<String> pila = new ArrayList<>();
-        List<String> instrucciones = new ArrayList<>();
-        obtenerParametros = instruccionesTemp.get(0).split(" ");
-        if(obtenerParametros[0].equals("PARAM")){   
-            // Si tiene parámetros, entonces "inicializo" la sección de memoria a usar como pila.
-            parametros = obtenerParametros[1].split(",");//Obtengo los parámetros
-            pila.addAll(Arrays.asList(parametros));//Los agrego a la pila temporal que se pasará al proceso.
-             
-            for(int i=0;i<CPU.LARGOPILA;i++){
-                    instrucciones.add("PARAM 0");//Se "inicializa" la posición (Las 10 primeras del proceso).
-            }
-            
-        }
-        
-        instrucciones.addAll(instruccionesTemp);// Se agregan las instrucciones después de la sección de Pila (si existe).
-        int numeroInstrucciones=instrucciones.size();
-        
-        int[] finInicioMemoria=determinarPosicionesMemoria(numeroInstrucciones);
-        int idProcesoNuevo=this.idProceso++;
-        int estadoProceso;
-        int nucleo = (int) (Math.random() * 2); // Se determina el núcleo donde se ejecutará el proceso.
-        
-        Boolean agregarACola=false; // Me indica si agrego el proceso a una cola.
-        if(finInicioMemoria[0]==-1){
-            // Si no hay espacio, entonces no se cargan las instrucciones en memoria.
-            estadoProceso=BCP.NUEVO;
-        }else{
-            // Si hay espacio, entonces sí se cargar las instrucciones en memoria.
-            cargarInstrucciones(finInicioMemoria[0],finInicioMemoria[1],instrucciones);
-            estadoProceso=BCP.PREPARADO;
-            agregarACola=true; // Indica que se agregue el proceso a la cola.
-        }
-        
-        BCP proceso=new BCP(estadoProceso, idProcesoNuevo, 0, finInicioMemoria[0], finInicioMemoria[1], nucleo,pila,instrucciones);
-        procesos.add(proceso);
-        if(agregarACola){
-            // Lo agrego aquí para que sea agregado a la cola después de agregar el proceso a la lista de procesos...
-            // ...para que no genere conflicto (muy poco probable) con los hilos.
-            agregarProcesoCola(nucleo,idProcesoNuevo);
-        }
-    }
-    
-    private void cargarInstrucciones(int inicioMemoria, int finMemoria, List<String> instrucciones){
-        String[] parteOperacion,parteResto;
-        String instruccionEnbits;
-        // Utilizo inicio de memoria como mi indice para moverme en la memoria, por eso lo aumento
-        for(int i=0; inicioMemoria<=finMemoria; inicioMemoria++,i++){
-            parteOperacion = instrucciones.get(i).split(" ");
-            instruccionEnbits = parteOperacion[0];          
-            if("INC".equals(instruccionEnbits) || "DEC".equals(instruccionEnbits)){                
-                 if(parteOperacion.length == 2){
-                    CPU.memoriaVirtual[inicioMemoria] = toBinario(instruccionEnbits)+" "+toBinario(parteOperacion[1])+" 00000000";
-                 }else{
-                    CPU.memoriaVirtual[inicioMemoria] = toBinario(instruccionEnbits)+" "+"0000"+" 00000000";
-                 }
-            }else{
-                parteResto = parteOperacion[1].split(",");
-                if(parteResto.length >=2){
-                    try{
-                        CPU.memoriaVirtual[inicioMemoria] = toBinario(instruccionEnbits)+" "+toBinario(parteResto[0])+" "+decimalABinaro(Integer.parseInt(parteResto[1]));                   
-                    }catch(NumberFormatException e){
-                        CPU.memoriaVirtual[inicioMemoria] = toBinario(instruccionEnbits)+" "+toBinario(parteResto[0])+" 00000"+toBinario(parteResto[1]);    
-                    }
-
-                }else{
-                    //Verifico si es jum, je, jne
-                    if("JUMP".equals(instruccionEnbits) || "JE".equals(instruccionEnbits) || "JNE".equals(instruccionEnbits)){
-                        CPU.memoriaVirtual[inicioMemoria] = toBinario(instruccionEnbits)+ " 0000 " +decimalABinaro(Integer.parseInt(parteResto[0]));
-                    }else{
-                        CPU.memoriaVirtual[inicioMemoria] = toBinario(instruccionEnbits)+" "+toBinario(parteResto[0])+" 00000000";                  
-                    }
-                    
-                }//SALE ELSE DENTRO              
-            }
-        }
-    }
-    
-    /**
-     * Se encarga de pasar los registros en String a binario para rellenar la memoria
-     * retorna el string en binario del string correspondiente.
-    **/
-    private String toBinario(String registro){      
-        switch(registro) {
-            case "AX"://AX                    
-                 return "0001";
-            case "BX"://BX
-                return "0010";                                  
-            case "CX"://CX
-                return "0011";
-            case "DX"://DX
-               return "0100";                  
-            case "LOAD"://LOAD
-               return "0001";
-            case "STORE"://STORE
-               return "0010";
-            case "MOV"://MOV
-               return "0011";
-            case "SUB"://SUB
-               return "0100";                
-            case "ADD"://ADD
-               return "0101"; 
-            case "INC"://INC    
-                return "0110";
-            case "DEC"://DEC
-                return "0111";
-            case "INT"://INT
-                return "1000";
-            case "JUMP"://JUM [+/-Desplazamiento]
-                return "1001";
-            case "CMP"://CMP Val1,Val2
-                return "1010";
-            case "JE"://JE [ +/-Desplazamiento]
-                return "1011";
-            case "JNE"://JNE [ +/-Desplazamiento]
-                return "1100";
-            case "POP"://POP AX
-                return "1101";                
-            case "20H":
-                return "0101";
-            case "16H":
-                return "0110";
-            case "05H":
-                return "0111";
-            case "PARAM":
-                return "1111";
-            default:
-                return "0000";
-        }    
-    }
-    
-    /**
-     * Se encarga de pasar los números de decimal a binario.
-     * retorna el string del número en binario
-     */
-    private String decimalABinaro(int a) {
-        boolean negativo = false;
-        if(a<0){
-            a *=-1;
-            negativo = true;
-        }       
-        String temp = Integer.toBinaryString(a);
-        
-        while(temp.length() !=7){
-            temp = "0"+temp;
-        }
-        if(negativo){temp="1"+temp;}else{temp="0"+temp;}
-        return temp;
-    }
-    
-    private void agregarProcesoCola(int nucleo, int idProcesoNuevo){
-        Trabajo trabajo;
-        if(nucleo==0){
-            
-                trabajo=new Trabajo(0, idProcesoNuevo);
-                colaTrabajoN1.add(trabajo);
-            
-        }else{           
-                trabajo=new Trabajo(1, idProcesoNuevo);
-                colaTrabajoN2.add(trabajo);
-        }
-       
     }
     
     /**
