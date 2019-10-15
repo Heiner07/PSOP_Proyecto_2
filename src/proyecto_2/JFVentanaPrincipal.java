@@ -15,6 +15,7 @@ import java.util.List;
 import javax.swing.BorderFactory;
 import javax.swing.JFileChooser;
 import javax.swing.JLabel;
+import javax.swing.JOptionPane;
 import javax.swing.SwingConstants;
 import javax.swing.Timer;
 import javax.swing.filechooser.FileNameExtensionFilter;
@@ -27,63 +28,46 @@ public class JFVentanaPrincipal extends javax.swing.JFrame {
     PanelPaginacion panelConfigPaginacion;
     String rutaArchivo;
     Boolean archivoCargado;
-    Boolean iniciado;
+    Boolean configurado;
     DefaultTableModel modeloTablaArchivos, modeloTablaMemoria, modeloTablaDisco, modeloTablaNucleo1, modeloTablaNucleo2;
     List<String> archivos;
+    List<List<JLabel>> nucleo1, nucleo2;
+    List<JLabel> procesosN1, procesosN2;
     CPU cpu;
     int algoritmoCPUSeleccionado;
     int algoritmoMemoriaSeleccionado;
     
     /* Hilos de control */
-    Timer timerControlNucleos, timerControlMemoria, timerControlDisco;
+    Timer timerControlProcesos, timerControlNucleos, timerControlMemoria, timerControlDisco;
     
     /**
      * Creates new form JFVentanaPrincipal
      */
     public JFVentanaPrincipal() {
         initComponents();
-        configurarColores();
+        this.modeloTablaArchivos = (DefaultTableModel) jtArchivos.getModel();
+        jtArchivos.setDefaultRenderer (Object.class, new EditorCeldas());
+        this.archivos=new ArrayList<>();
+        this.nucleo1=new ArrayList<>();
+        this.nucleo2=new ArrayList<>();
+        this.procesosN1=new ArrayList<>();
+        this.procesosN2=new ArrayList<>();
+        this.cpu=new CPU();
+        this.archivoCargado=false;
+        this.configurado=false;
+        this.algoritmoCPUSeleccionado = 0;
+        this.algoritmoMemoriaSeleccionado = 0;
         configurarTablaMemoria();
         configurarTablaDisco();
         configurarTablaNucleo1();
         configurarTablaNucleo2();
-        this.modeloTablaArchivos = (DefaultTableModel) jtArchivos.getModel();
-        this.archivos=new ArrayList<>();
-        this.cpu=new CPU();
-        this.archivoCargado=false;
-        this.iniciado=false;
-        this.algoritmoCPUSeleccionado = 0;
-        this.algoritmoMemoriaSeleccionado = 0;
         configuararHilos();
         this.setLocationRelativeTo(null);
     }
     
-    private void configurarColores(){
-        // Configurando colores del núcleo 1
-        /*jpNucleo1.setBackground(Colores.nucleo1);
-        lbNucleo1Titulo.setForeground(Colores.fuenteNucleo1);
-        lbPCN1.setForeground(Colores.fuenteNucleo1);
-        lbPCN1Titulo.setForeground(Colores.fuenteNucleo1);
-        lbAXN1.setForeground(Colores.fuenteNucleo1);
-        lbAXN1Titulo.setForeground(Colores.fuenteNucleo1);
-        lbBXN1.setForeground(Colores.fuenteNucleo1);
-        lbBXN1Titulo.setForeground(Colores.fuenteNucleo1);
-        lbCXN1.setForeground(Colores.fuenteNucleo1);
-        lbCXN1Titulo.setForeground(Colores.fuenteNucleo1);
-        lbDXN1.setForeground(Colores.fuenteNucleo1);
-        lbDXN1Titulo.setForeground(Colores.fuenteNucleo1);
-        lbACN1.setForeground(Colores.fuenteNucleo1);
-        lbACN1Titulo.setForeground(Colores.fuenteNucleo1);
-        lbIRN1.setForeground(Colores.fuenteNucleo1);
-        lbIRN1Titulo.setForeground(Colores.fuenteNucleo1);
-        
-        //Configurando colores del núcleo 2
-        jpNucleo2.setBackground(Colores.nucleo2);*/
-    }
-    
     private void configurarTablaMemoria(){
         this.modeloTablaMemoria = (DefaultTableModel) jtMemoria.getModel();
-        jtMemoria.removeAll();
+        this.modeloTablaMemoria.setRowCount(0);
         for(int i=0;i<CPU.LARGOMEMORIA;i++){
             modeloTablaMemoria.addRow(new Object[]{i,"0000"});
         }
@@ -91,77 +75,182 @@ public class JFVentanaPrincipal extends javax.swing.JFrame {
     
     private void configurarTablaDisco(){
         this.modeloTablaDisco = (DefaultTableModel) jtDisco.getModel();
-        jtDisco.removeAll();
+        this.modeloTablaDisco.setRowCount(0);
         for(int i=0;i<CPU.LARGODISCO;i++){
             modeloTablaDisco.addRow(new Object[]{i,"0000"});
         }
     }
     
+    /**
+     * Crea la tabla del núcleo 1 donde se mostrará la ejecución de los algortimos de CPU
+     */
     private void configurarTablaNucleo1(){
         JLabel label;
-        panelProcesosNucleo1.setLayout(new GridLayout(7, 1));
+        configurarTablaProcesosN1();
+        
+        /* Se limpia la interfaz y las estructuras de control */
+        panelNucleo1.removeAll();
+        nucleo1.clear();
+        
+        panelNucleo1.setLayout(new GridLayout(CPU.PROCESOSPORNUCLEO+1, 80));
+        for(int i = 0; i < CPU.PROCESOSPORNUCLEO+1; i++){
+            List<JLabel> fila = new ArrayList<>();
+            for(int j = 0; j < 80; j++){
+                if(i == 0){
+                    label = new JLabel(" "+String.valueOf(j+1)+" ");
+                }else{
+                    label = new JLabel("");
+                }
+                label.setBorder(BorderFactory.createLineBorder(Color.BLACK, 1));
+                label.setHorizontalAlignment(SwingConstants.CENTER);
+                label.setFont(new Font("Arial", 0, 11));
+                label.setBackground(Color.WHITE);
+                label.setOpaque(true);
+                panelNucleo1.add(label);
+                fila.add(label);
+            }
+            nucleo1.add(fila);
+        }
+        panelNucleo1.updateUI();
+    }
+    
+    /**
+     * Crea los labels donde se colocaran los nombres de los procesos para este núcleo
+     */
+    private void configurarTablaProcesosN1(){
+        JLabel label;
+        
+        /* Se limpia la interfaz y las estructuras de control */
+        panelProcesosNucleo1.removeAll();
+        procesosN1.clear();
+        
+        panelProcesosNucleo1.setLayout(new GridLayout(CPU.PROCESOSPORNUCLEO+1, 1));
         label = new JLabel("Procesos");
         label.setFont(new Font("Arial", 0, 11));
         panelProcesosNucleo1.add(label);
-        for(int i = 0; i < 6; i++){
-            label = new JLabel("Proceso "+String.valueOf(i+1));
+        for(int i = 0; i < CPU.PROCESOSPORNUCLEO; i++){
+            label = new JLabel(" ");
             label.setBorder(BorderFactory.createLineBorder(Color.BLACK, 1));
             label.setFont(new Font("Arial", 0, 11));
+            label.setBackground(Color.WHITE);
+            label.setOpaque(true);
             panelProcesosNucleo1.add(label);
+            procesosN1.add(label);
         }
-        panelNucleo1.setLayout(new GridLayout(7, 80));
-        int x = 0, y = 0;
-        int ancho = 40, alto = 40;
-        for(int i = 0; i < 80*7; i++){
-            if(i<80){
-                label = new JLabel(" "+String.valueOf(i+1)+" ");
-            }else{
-                label = new JLabel("");
-            }
-            label.setBorder(BorderFactory.createLineBorder(Color.BLACK, 1));
-            label.setHorizontalAlignment(SwingConstants.CENTER);
-            label.setFont(new Font("Arial", 0, 11));
-            panelNucleo1.add(label);
-            x += ancho;
-            if(x == ancho*80){
-                x = 0;
-                y += alto;
-            }
-        }panelNucleo1.updateUI();
     }
     
+    /**
+     * Crea la tabla del núcleo 2 donde se mostrará la ejecución de los algortimos de CPU
+     */
     private void configurarTablaNucleo2(){
         JLabel label;
-        panelProcesosNucleo2.setLayout(new GridLayout(7, 1));
+        configurarTablaProcesosN2();
+        
+        /* Se limpia la interfaz y las estructuras de control */
+        panelNucleo2.removeAll();
+        nucleo2.clear();
+        
+        panelNucleo2.setLayout(new GridLayout(CPU.PROCESOSPORNUCLEO+1, 80));
+        for(int i = 0; i < CPU.PROCESOSPORNUCLEO+1; i++){
+            List<JLabel> fila = new ArrayList<>();
+            for(int j = 0; j < 80; j++){
+                if(i == 0){
+                    label = new JLabel(" "+String.valueOf(j+1)+" ");
+                }else{
+                    label = new JLabel("");
+                }
+                label.setBorder(BorderFactory.createLineBorder(Color.BLACK, 1));
+                label.setHorizontalAlignment(SwingConstants.CENTER);
+                label.setFont(new Font("Arial", 0, 11));
+                label.setBackground(Color.WHITE);
+                label.setOpaque(true);
+                panelNucleo2.add(label);
+                fila.add(label);
+            }
+            nucleo2.add(fila);
+        }panelNucleo2.updateUI();
+    }
+    
+    /**
+     * Crea los labels donde se colocaran los nombres de los procesos para este núcleo
+     */
+    private void configurarTablaProcesosN2(){
+        JLabel label;
+        
+        /* Se limpia la interfaz y las estructuras de control */
+        panelProcesosNucleo2.removeAll();
+        procesosN2.clear();
+        
+        panelProcesosNucleo2.setLayout(new GridLayout(CPU.PROCESOSPORNUCLEO+1, 1));
         label = new JLabel("Procesos");
         label.setFont(new Font("Arial", 0, 11));
         panelProcesosNucleo2.add(label);
-        for(int i = 0; i < 6; i++){
-            label = new JLabel("Proceso "+String.valueOf(i+1));
+        for(int i = 0; i < CPU.PROCESOSPORNUCLEO; i++){
+            label = new JLabel(" ");
             label.setBorder(BorderFactory.createLineBorder(Color.BLACK, 1));
             label.setFont(new Font("Arial", 0, 11));
+            label.setBackground(Color.WHITE);
+            label.setOpaque(true);
             panelProcesosNucleo2.add(label);
+            procesosN2.add(label);
         }
-        panelNucleo2.setLayout(new GridLayout(7, 80));
-        int x = 0, y = 0;
-        int ancho = 40, alto = 40;
-        for(int i = 0; i < 80*7; i++){
-            if(i<80){
-                label = new JLabel(" "+String.valueOf(i+1)+" ");
-            }else{
-                label = new JLabel("");
+    }
+    
+    /**
+     * Establece los procesos, con sus datos, cargados en el programa en la interfaz.
+     */
+    private void configurarTablaProcesos(){
+        this.modeloTablaArchivos = (DefaultTableModel) jtArchivos.getModel();
+        this.modeloTablaArchivos.setRowCount(0);
+        List<Proceso> procesos = cpu.obtenerProcesos();
+        Proceso proceso;
+        int cantidadProcesos = procesos.size();
+        String nombre, estado;
+        int rafaga, tiempoLlegada, prioridad, tamanio;
+        for(int i = 0; i < cantidadProcesos; i++){
+            proceso = procesos.get(i);
+            nombre = proceso.obtenerNombre();
+            estado = Proceso.estadoProcesoCadena(proceso.obtenerEstadoProceso());
+            rafaga = proceso.obtenerRafaga();
+            tiempoLlegada = proceso.obtenerTiempoLLegada();
+            prioridad = proceso.obtenerPrioridad();
+            tamanio = proceso.obtenerTamanio();
+            modeloTablaArchivos.addRow(new Object[]{nombre, rafaga, tiempoLlegada, prioridad, tamanio, estado });
+        }
+    }
+    
+    /**
+     * Establece el nombre de los procesos asignados a cada núcleo en la interfaz
+     */
+    private void configurarProcesosNucleos(){
+        // Obtengo los núcleos del CPU
+        Nucleo n1 = cpu.obtenerNucleo1();
+        Nucleo n2 = cpu.obtenerNucleo2();
+        // Obtengo los procesos de cada núcleo
+        List<Proceso> procesosObtenidosN1 = n1.obtenerProcesos();
+        List<Proceso> procesosObtenidosN2 = n2.obtenerProcesos();
+        int numeroProcesosN1 = procesosObtenidosN1.size();
+        int numeroProcesosN2 = procesosObtenidosN2.size();
+        JLabel label;
+        
+        //Establezco los procesos en la interfaz
+        for(int i = 0; i < numeroProcesosN1 && i < CPU.PROCESOSPORNUCLEO; i++){
+            label = procesosN1.get(i);
+            label.setText(procesosObtenidosN1.get(i).obtenerNombre());
+            label.setBackground(Colores.COLORES[i]);
+            if(i == 2 || i == 5){
+                label.setForeground(Color.WHITE);
             }
-            //label.setBounds(x, y, ancho, alto);
-            label.setBorder(BorderFactory.createLineBorder(Color.BLACK, 1));
-            label.setHorizontalAlignment(SwingConstants.CENTER);
-            label.setFont(new Font("Arial", 0, 11));
-            panelNucleo2.add(label);
-            x += ancho;
-            if(x == ancho*80){
-                x = 0;
-                y += alto;
+        }
+        
+        for(int i = 0; i < numeroProcesosN2 && i < CPU.PROCESOSPORNUCLEO; i++){
+            label = procesosN2.get(i);
+            label.setText(procesosObtenidosN2.get(i).obtenerNombre());
+            label.setBackground(Colores.COLORES[i]);
+            if(i == 2 || i == 5){
+                label.setForeground(Color.WHITE);
             }
-        }panelNucleo2.updateUI();
+        }
     }
     
     /**
@@ -169,9 +258,37 @@ public class JFVentanaPrincipal extends javax.swing.JFrame {
      * ...los valores en la interfaz gráfica.
      */
     private void configuararHilos(){
+        configurarHiloProcesos();
         configurarHiloNucleos();
         configurarHiloMemoria();
         configurarHiloDisco();
+    }
+    
+    /**
+     * Establece la función para el timer timerControlProcesos que se encargará de actualizar...
+     * ...los valores de los procesos en la interfaz gráfica.
+     */
+    private void configurarHiloProcesos(){
+        timerControlProcesos = new Timer(1000, (ActionEvent ae) -> {
+            // Función que repetirá segun el intervalo asignado (1 segundo).
+            controlGraficoProcesos();
+        });
+        // Inicializo el timer.
+        timerControlProcesos.start();
+    }
+    
+    /**
+     * Controla los valores de los procesos que se muestran en la interfaz gráfica.
+     * Este método es invocado por el timer timerControlProcesos.
+     */
+    private void controlGraficoProcesos(){
+        List<Proceso> procesos = cpu.obtenerProcesos();
+        Proceso proceso;
+        int cantidadProcesos = procesos.size();
+        for(int i = 0; i < cantidadProcesos; i++){
+            proceso = procesos.get(i);
+            modeloTablaArchivos.setValueAt(Proceso.estadoProcesoCadena(proceso.obtenerEstadoProceso()), i, 5);
+        }
     }
     
     /**
@@ -248,18 +365,28 @@ public class JFVentanaPrincipal extends javax.swing.JFrame {
         // Obtengo los núcleos del CPU
         Nucleo n1 = cpu.obtenerNucleo1();
         Nucleo n2 = cpu.obtenerNucleo2();
-        
-    }
-    
-    private List<String> obtenerArchivosAnalizar(){
-        List<String> archivosAnalizar=new ArrayList<>();
-        int cantidadArchivos=modeloTablaArchivos.getRowCount();
-        for(int i=0;i<cantidadArchivos;i++){
-            Boolean ejecutar=(Boolean) modeloTablaArchivos.getValueAt(i, 1);
-            if(ejecutar){
-                archivosAnalizar.add(archivos.get(i));
+        if(n1.obtenerEstado() || n2.obtenerEstado()){
+            // Obtengo los procesos de cada núcleo
+            List<Proceso> procesosEjecutandoN1 = n1.obtenerEjecucionProcesos();
+            List<Proceso> procesosEjecutandoN2 = n2.obtenerEjecucionProcesos();
+            int numeroProcesosN1 = procesosEjecutandoN1.size();
+            int numeroProcesosN2 = procesosEjecutandoN2.size();
+            JLabel label;
+
+            //Establezco los datos generados hasta el momento según el algoritmo ejecutado
+            for(int i = 0; i < numeroProcesosN1; i++){
+                label = nucleo1.get(procesosEjecutandoN1.get(i).obtenerNumeroProceso()).get(i);
+                label.setBackground(Colores.COLORES[procesosEjecutandoN1.get(i).obtenerNumeroProceso()-1]);
             }
-        }return archivosAnalizar;
+
+            for(int i = 0; i < numeroProcesosN2; i++){
+                label = nucleo2.get(procesosEjecutandoN2.get(i).obtenerNumeroProceso()).get(i);
+                label.setBackground(Colores.COLORES[procesosEjecutandoN2.get(i).obtenerNumeroProceso()-1]);
+            }
+        }else{
+            btCargarArchivo.setEnabled(true);
+            btEjecutar.setEnabled(true);
+        }
     }
 
     /**
@@ -276,6 +403,7 @@ public class JFVentanaPrincipal extends javax.swing.JFrame {
         jScrollPane1 = new javax.swing.JScrollPane();
         jtArchivos = new javax.swing.JTable();
         btEjecutar = new javax.swing.JButton();
+        lbConfigMensaje = new javax.swing.JLabel();
         jPanel2 = new javax.swing.JPanel();
         jLabel1 = new javax.swing.JLabel();
         jScrollPane3 = new javax.swing.JScrollPane();
@@ -359,6 +487,9 @@ public class JFVentanaPrincipal extends javax.swing.JFrame {
             }
         });
 
+        lbConfigMensaje.setFont(new java.awt.Font("Arial", 0, 14)); // NOI18N
+        lbConfigMensaje.setText("Configuración: Pendiente");
+
         javax.swing.GroupLayout jPanel1Layout = new javax.swing.GroupLayout(jPanel1);
         jPanel1.setLayout(jPanel1Layout);
         jPanel1Layout.setHorizontalGroup(
@@ -368,10 +499,12 @@ public class JFVentanaPrincipal extends javax.swing.JFrame {
                 .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addComponent(jScrollPane1, javax.swing.GroupLayout.DEFAULT_SIZE, 494, Short.MAX_VALUE)
                     .addGroup(jPanel1Layout.createSequentialGroup()
-                        .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                            .addComponent(btEjecutar)
-                            .addComponent(btCargarArchivo))
-                        .addGap(0, 0, Short.MAX_VALUE)))
+                        .addComponent(btCargarArchivo)
+                        .addGap(0, 0, Short.MAX_VALUE))
+                    .addGroup(jPanel1Layout.createSequentialGroup()
+                        .addComponent(btEjecutar)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                        .addComponent(lbConfigMensaje, javax.swing.GroupLayout.PREFERRED_SIZE, 250, javax.swing.GroupLayout.PREFERRED_SIZE)))
                 .addContainerGap())
         );
         jPanel1Layout.setVerticalGroup(
@@ -380,10 +513,12 @@ public class JFVentanaPrincipal extends javax.swing.JFrame {
                 .addContainerGap()
                 .addComponent(btCargarArchivo)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 160, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(btEjecutar)
-                .addContainerGap(40, Short.MAX_VALUE))
+                .addComponent(jScrollPane1, javax.swing.GroupLayout.DEFAULT_SIZE, 187, Short.MAX_VALUE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                    .addComponent(lbConfigMensaje)
+                    .addComponent(btEjecutar))
+                .addContainerGap())
         );
 
         jLabel1.setFont(new java.awt.Font("Arial", 0, 14)); // NOI18N
@@ -553,7 +688,7 @@ public class JFVentanaPrincipal extends javax.swing.JFrame {
                     .addGroup(jPanel9Layout.createSequentialGroup()
                         .addComponent(jScrollPane2, javax.swing.GroupLayout.PREFERRED_SIZE, 80, javax.swing.GroupLayout.PREFERRED_SIZE)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addComponent(jspNucleo1))
+                        .addComponent(jspNucleo1, javax.swing.GroupLayout.DEFAULT_SIZE, 1024, Short.MAX_VALUE))
                     .addGroup(jPanel9Layout.createSequentialGroup()
                         .addComponent(jScrollPane6, javax.swing.GroupLayout.PREFERRED_SIZE, 80, javax.swing.GroupLayout.PREFERRED_SIZE)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
@@ -703,29 +838,24 @@ public class JFVentanaPrincipal extends javax.swing.JFrame {
     }// </editor-fold>//GEN-END:initComponents
 
     private void btEjecutarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btEjecutarActionPerformed
-        /*if(!archivos.isEmpty()){
-            List<String> archivosAnalizar=obtenerArchivosAnalizar();
-            if(!archivosAnalizar.isEmpty()){
-                iniciado=true;
-                // Carga los programas (archivos) al CPU.
-                List<String> errores = cpu.cargarProgramas(archivosAnalizar); // Esta funcion retorna los archivos que fallaron.
-                int cantidadErrores = errores.size();
-                String archivosConError="";
-                // Se crea la cadena con los archivo que presentaron errores.
-                for(int i=0;i<cantidadErrores;i++){
-                    archivosConError+="\""+errores.get(i)+"\" ";
-                }
-                if(errores.size()>0){
-                    // Se muestra el mensaje con los archivos con errores.
-                    JOptionPane.showMessageDialog(this, "Ocurrió un error leyendo el(los) archivo(s): "+archivosConError,
-                            "Error leyendo archivo",JOptionPane.WARNING_MESSAGE);
-                }
+        if(configurado){
+            if(cpu.obtenerProcesos().size() > 0){
+                cpu.limpiarProcesos();
+                cpu.cargarPrograma(rutaArchivo);
+                configurarTablaNucleo1();
+                configurarTablaNucleo2();
+                configurarProcesosNucleos();
+                cpu.empezarEjecucion();
+                btEjecutar.setEnabled(false);
+                btCargarArchivo.setEnabled(false);
             }else{
-                JOptionPane.showMessageDialog(this, "Marque al menos un archivo para ejecutar", "Ejecutar archivo",JOptionPane.WARNING_MESSAGE);
+                JOptionPane.showMessageDialog(this, "No hay procesos cargados",
+                            "Cargue procesos",JOptionPane.WARNING_MESSAGE);
             }
         }else{
-            JOptionPane.showMessageDialog(this, "Cargue un archivo para ejecutar", "Carga de archivo",JOptionPane.WARNING_MESSAGE);
-        }*/
+            JOptionPane.showMessageDialog(this, "Establezca la configuración por utilizar",
+                            "Configuración de algoritmos",JOptionPane.WARNING_MESSAGE);
+        }
     }//GEN-LAST:event_btEjecutarActionPerformed
 
     private void btCargarArchivoActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btCargarArchivoActionPerformed
@@ -736,9 +866,15 @@ public class JFVentanaPrincipal extends javax.swing.JFrame {
         if(archivo!=null){
             rutaArchivo=archivo.getPath();
             archivoCargado=true;
-            cpu.cargarPrograma(rutaArchivo);
-            //Leer los procesos del archivo cargado...
-            
+            // Reinicia los valores
+            cpu.limpiarProcesos();
+            //Leer los procesos del archivo cargado
+            List<String> errores = cpu.cargarPrograma(rutaArchivo);
+            configurarTablaProcesos();
+            if(errores.size() > 0){
+                JOptionPane.showMessageDialog(this, "Se presentaron los siguientes errores:\n"+errores.toString(),
+                            "Error cargando el archivo",JOptionPane.ERROR_MESSAGE);
+            }
         }
     }//GEN-LAST:event_btCargarArchivoActionPerformed
 
@@ -748,6 +884,14 @@ public class JFVentanaPrincipal extends javax.swing.JFrame {
         algoritmoMemoriaSeleccionado = cbAlgoritmoMemoria.getSelectedIndex();
         int largoMemoria = (int)jspTamanioMemoria.getValue();
         int largoDisco = (int)jspTamanioDisco.getValue();
+        
+        /* Establezco los algoritmos seleccionados en el CPU */
+        CPU.ALGORITMO_CPU = algoritmoCPUSeleccionado;
+        CPU.ALGORITMO_MEMORIA = algoritmoMemoriaSeleccionado;
+        
+        /* Establezco el mensaje de la configuración seleccionada en la interfaz */
+        lbConfigMensaje.setText("Configuración: "+ cbAlgoritmoCPU.getSelectedItem() +" y "+
+                cbAlgoritmoMemoria.getSelectedItem());
         
         /* Actualizo los valores de la memoria y disco en el CPU */
         cpu.establecerValoresMemoriaDisco(largoMemoria, largoDisco);
@@ -773,6 +917,7 @@ public class JFVentanaPrincipal extends javax.swing.JFrame {
         }else{
             panelConfigPaginacion = null;
         }panelConfigAlgoritmos.updateUI();
+        configurado = true;
     }//GEN-LAST:event_btUtilizarConfiguracionActionPerformed
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
@@ -808,6 +953,7 @@ public class JFVentanaPrincipal extends javax.swing.JFrame {
     private javax.swing.JTable jtArchivos;
     private javax.swing.JTable jtDisco;
     private javax.swing.JTable jtMemoria;
+    private javax.swing.JLabel lbConfigMensaje;
     private javax.swing.JPanel panelConfigAlgoritmos;
     private javax.swing.JPanel panelNucleo1;
     private javax.swing.JPanel panelNucleo2;

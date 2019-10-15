@@ -17,15 +17,11 @@ import javax.swing.Timer;
  */
 public class Nucleo {
     
-    private Proceso procesoEjecutando=null;
-    static int numeroInstrucciones=0;
+    private Proceso procesoEjecutando = null;
     private int numeroNucleo;
-    private Boolean bandera= false;
     private Boolean ejecutar = false;
-    private Boolean esperaInterrupcion = false; // Indica si el núcleo está a la espera que se complete una interrupción.
     private Timer timerOperacion;
     private int tiempoRestante=1; // Variable que indicara cuantos segendos debe esperar hasta recibir otra instrucción
-    private boolean banderaInterrupcion=false;
     private List<Proceso> procesos, ejecucionProcesos;
     
     public Nucleo(int numeroNucleo){
@@ -43,6 +39,78 @@ public class Nucleo {
         timerOperacion.start();
     }
     
+    /**
+     * Función llamada por el controlEjecucionNucleo.
+     * Ejecuta el algoritmo correspondiente a lo seleccionado por el usuario.
+     * 0 = FCFS
+     */
+    private void ejecutarAlgoritmo(){
+        if(CPU.ALGORITMO_CPU == 0){
+            algoritmoFCFS();
+        }
+    }
+    
+    /**
+     * Se encarga de retornar el Proceso siguiente a ejecutar según las condiciones del...
+     * ... algoritmo FCFS.
+     * @return Proceso
+     */
+    private Proceso obtenerProcesoFCFS(){
+        int cantidadProcesos = procesos.size();
+        Proceso proceso = null, procesoTemp;
+        for(int i = 0; i < cantidadProcesos; i++){
+            procesoTemp = procesos.get(i);
+            if(proceso == null){
+                /* Si es nulo, estoy empezando o ya hay proceso valido por ejecutar */
+                if(procesoTemp.obtenerRafaga() > 0 && procesoTemp.obtenerNumeroProceso() <= CPU.PROCESOSPORNUCLEO){
+                    /* Si estoy empezando, asigno el proceso siempre y cuando...
+                    ...sea menor al limite de procesos por núcleos y la ráfaga sea mayor a 0 */
+                    proceso = procesos.get(i);
+                }
+            }else{
+                /* Si no es nulo, entonces estoy con un proceso, lo evaluo con el siguiente y escojo el de menor...
+                ... tiempo de llegada y que sea menor al limite de procesos por núcleos */
+                if(procesoTemp.obtenerTiempoLLegada() < proceso.obtenerTiempoLLegada() &&
+                        procesoTemp.obtenerRafaga() > 0 && procesoTemp.obtenerNumeroProceso() <= CPU.PROCESOSPORNUCLEO){
+                    
+                    proceso = procesos.get(i);
+                }
+            }
+        }return proceso;
+    }
+    
+    /**
+     * Se encarga de ejecutar el algoritmo FCFS de CPU
+     */
+    private void algoritmoFCFS(){
+        /* Maneja el proceso saliente, para establecer su estado correspondiente */
+        manejarProcesoSalienteFCFS();
+        /* Obtengo el proceso siguiente del FCFS...
+        ...(Puede ser el mismo del paso anterior, ya que no ha terminado la ráfaga) */
+        procesoEjecutando = obtenerProcesoFCFS();
+        if(procesoEjecutando != null){
+            /* Si no es nulo, lo agrego a la lista de control del algoritmo (leida por la interfaz) */
+            ejecucionProcesos.add(procesoEjecutando);
+            procesoEjecutando.establecerEstado(Proceso.EN_EJECUCION); // Lo establezco en ejecución
+            procesoEjecutando.restarRafaga(); // Resto la ráfaga.
+            tiempoRestante = 1; // Establezco el tiempo de espera.
+        }else{
+            /* Si es nulo, el algoritmo ya finalizó */
+            ejecutar = false;
+        }
+    }
+    
+    /**
+     * Establece el estado correspondiente para el proceso saliente del algoritmo FCFS
+     */
+    private void manejarProcesoSalienteFCFS(){
+        if(procesoEjecutando != null){
+            if(procesoEjecutando.obtenerRafaga() == 0){
+                procesoEjecutando.establecerEstado(Proceso.TERMINADO);
+            }
+        }
+    }
+    
     public void agregarProceso(Proceso proceso){
         procesos.add(proceso);
     }
@@ -55,30 +123,38 @@ public class Nucleo {
         return ejecucionProcesos;
     }
     
+    public int obtenerNumeroProcesoSiguiente(){
+        return procesos.size() + 1;
+    }
+    
+    public void empezarEjecucion(){
+        ejecutar = true;
+    }
+    
     /**
      * Función llamada por el timerOperación que controla la ejecución de las operaciones en el núcleo.
-     * Si el tiempo es cero entonces verifica que hay una instrucción a ejecutar y la realiza, sino resta el tiempo...
-     * ...requerido de la operación anterior.
+     * Si el tiempo es cero entonces verifica si tiene que ejecutar los procesos, sino resta el tiempo...
+     * ... para pasar al segundo siguiente.
      */
     private void controlEjecucionNucleo(){
-        //try {
-            if(tiempoRestante==0){
-                if(ejecutar && !esperaInterrupcion){
-                    ejecutar=false;
-                    //Operaciones();
-                }
-            }else{
-                tiempoRestante--;
+        if(tiempoRestante == 0){
+            if(ejecutar){
+                ejecutarAlgoritmo();
             }
-        /*} catch (InterruptedException ex) {
-            // Modificar para mostrar mensaje correspondiente
-            Logger.getLogger(Nucleo.class.getName()).log(Level.SEVERE, null, ex);
-        }*/
+        }else{
+            tiempoRestante--;
+        }
+    }
+    
+    public void limpiarProcesos(){
+        procesos.clear();
+        ejecucionProcesos.clear();
+        procesoEjecutando = null;
+        ejecutar = false;
     }
     
     public Boolean obtenerEstado(){
-        // Si es igual a cero(tiempo de espera) y no espera interrupción, entonces está listo.
-        return (tiempoRestante==0) && !esperaInterrupcion;
+        return ejecutar;
     }
     
     /**
@@ -87,18 +163,6 @@ public class Nucleo {
      * @throws InterruptedException 
      */
     public void recibirProceso(Proceso proceso) throws InterruptedException{
-        /*if(procesoEjecutando==null){
-            // Si no hay proceso asignado, entonces solo se establece el entrante.
-            establecerContexto(proceso);
-            ejecutar=true;
-        }else if(procesoEjecutando.obtenerNumeroProceso()==proceso.obtenerNumeroProceso()){
-            procesoEjecutando.establecerEstado(BCP.EN_EJECUCION);
-            // Si es el mismo proceso, solo indico que ejecute la siguiente instrucción
-            ejecutar=true;
-        }else{
-            // Si es otro proceso diferente, entonces ejecuto un cambio de contexto.
-            cambioContexto(proceso);
-            ejecutar=true;
-        }*/
+        
     }
 }

@@ -28,21 +28,18 @@ public class CPU {
     static int LARGODISCO = 1024;
     static int LARGOMEMORIAVIRTUAL = LARGOMEMORIA+LARGODISCO/2;
     static int LARGOPILA = 10;
+    static int ALGORITMO_CPU = 0;
+    static int ALGORITMO_MEMORIA = 0;
+    static int PROCESOSPORNUCLEO = 6;
     static String[] memoriaVirtual = new String[LARGOMEMORIAVIRTUAL];
     static String[] memoria = new String[LARGOMEMORIA];
     static String[] disco = new String[LARGODISCO];
     private Nucleo nucleo1, nucleo2;
     private List<Trabajo> colaTrabajoN1, colaTrabajoN2;
     private List<Proceso> procesos;
-    private int idProceso;
     private int procesoCola1,procesoCola2;
     
     static List<Trabajo> colaImprimir1,colaImprimir2;
-
-    
-    
-    
-    
     
     /* Hilos de Control */
     private Timer timerControlColasNucleos, timerControlMemoriaVirtual,timerControlProcesos;
@@ -55,7 +52,6 @@ public class CPU {
         CPU.colaImprimir1 = new ArrayList<>();
         CPU.colaImprimir2 = new ArrayList<>();
         this.procesos = new ArrayList<>();
-        this.idProceso = 0;
         inicializaMemoria();
         inicializarDisco();
         inicializarMemoriaVirtual();
@@ -208,22 +204,7 @@ public class CPU {
     Si tiene espacio en memoria, edita las posiciones de memoria.
     */
     private void verificarProcesos(){
-        for(int i=0;i<procesos.size();i++){        
-            Proceso proc = procesos.get(i);
-            if(proc.obtenerInicioMemoria() == -1 && (proc.obtenerEstadoProceso()==Proceso.NUEVO)){
-//                int[] finInicioMemoria = determinarPosicionesMemoria(proc.obtenerInstruccionesMemoria().size());
-//                if(finInicioMemoria[0] != -1){
-//                    // Si hay espacio, entonces sí se cargar las instrucciones en memoria.
-//                    cargarInstrucciones(finInicioMemoria[0],finInicioMemoria[1],proc.obtenerInstruccionesMemoria());
-//                    agregarProcesoCola(proc.obtenerNucleo(),proc.obtenerNumeroProceso());
-//                    proc.actualizarProceso(BCP.PREPARADO,finInicioMemoria[0],finInicioMemoria[1]);
-//                    
-//                
-//                }//SALE IF2
-            
-            }//SALE IF1
-        }//SALE FOR
-    
+        
     }
    
     /**
@@ -336,115 +317,152 @@ public class CPU {
         }return null;
     }
     
-    public void cargarPrograma(String archivo){
-       // int cantidadArchivos=archivo.length();
-        List<String> erroresLectura = new ArrayList<>(); // Almacena los archivos donde ocurrió un error;
+    /**
+     * Se encarga de cargar los procesos del archivo.
+     * Valida que los datos sean correctos y si lo son, llama a crear el proceso...
+     * ... y se agrega al sistema.
+     * @param archivo
+     * @return 
+     */
+    public List<String> cargarPrograma(String archivo){
+        List<String> erroresLectura = new ArrayList<>(); // Almacena los errores que ocurren (para la interfaz);
         List<String> procesos_totales;
+        int linea = 1;
        
         try {
-            
-            procesos_totales=obtenerInstruccionesArchivo(archivo);
-            procesos_totales.stream().forEach((proceso) -> {
-                String proceso_validar = proceso.replace(" ","");
-                if(validar_proceso(proceso_validar)){
-                    //Se agrega
-                    System.out.println(proceso_validar);
+            /* Se obtienen los procesos del archivo */
+            procesos_totales=obtenerProcesosArchivo(archivo);
+            for(String proceso: procesos_totales){
+                String proceso_validar = proceso.replace(" ",""); // Se limpia el string
+                String[] datos = proceso_validar.split(";"); // Se dividen los datos
+                if(validar_proceso(datos)){
                     // Una vez se comprueba que los datos son correctos se crea el proceso y se agrega al núcleo respectivo
-                    // nucleo.agregarProceso(procesoNuevo);
+                    crearProceso(datos);
                 }else{
-                    System.out.println("No se agrega el proceso");
-                //no se agrega
-                }
-            });
-            
-        }catch (IOException ex) {
-        }
-        
-    }
-    
-    public boolean validar_proceso(String proceso){
-        String[] obtener_datos;
-        obtener_datos = proceso.split(";");
-        int cantidad_datos = 0;
-        for (String obtener_dato : obtener_datos) {
-            cantidad_datos++;
-            System.out.println(obtener_dato);
-        }
-        if(cantidad_datos == 5){
-            //Validar que el nombre no se repita
-            return true;
-        }
-        return false;
-    }
-    
-    /**
-     * Determina si hay espacio suficiente según la memoria indicada (memoriaRequerida). Se utiliza...
-     * ...para determinar las posiciones de memoria que tendra el bloque (proceso).
-     * Se retorna un arreglo de enteros de dos elementos. La posicion 0 es el inicio de memoria...
-     * ... y la posicion 1 es el fin de memoria.
-     * Si no hay espacio para el bloque, se retorna -1 en ambas posiciones [-1, -1].
-     * @param memoriaRequerida
-     * @return int[]
-     */
-    private int[] determinarPosicionesMemoria(int memoriaRequerida){
-        int inicioMemoria = -1, finMemoria = -1;
-        Boolean hayEspacio = false;      
-        /* 
-        * Se recorre toda la memoria en busca de una posición de memoria...
-        * en la que no se encuentre ningúnas instrucción, a partir de ahí sigue
-        * recorriendo hasta encontrar la memoria requerida por el proceso.
-        */
-        
-        for(int i=0;i<CPU.LARGOMEMORIAVIRTUAL;i++){        
-           if(!hayEspacio){
-                if(CPU.memoriaVirtual[i].equals("0000 0000 00000000")){
-                    int memoriaAcumulada=0;
-                     for(int k=i;k<CPU.LARGOMEMORIAVIRTUAL;k++){
-                         
-                         if(CPU.memoriaVirtual[k].equals("0000 0000 00000000")){
-                             memoriaAcumulada++;
-                             if(memoriaAcumulada == memoriaRequerida){
-                                 inicioMemoria = i;
-                                 finMemoria = k;
-                                 hayEspacio = true;
-                                 break;
-                             }
-
-                         }else{
-                             break;
-                         }
-                     }//SALE FOR
-                }//SALE IF
-           }//SALE IF
-           else break;
-           
-        }      
-        if(hayEspacio){
-            // Si hay espacio, retorno las posiciones encontradas.
-            return new int[]{inicioMemoria, finMemoria};
-        }else{            
-                return new int[]{ -1,-1};           
+                    // Si no es coreecto se registra el error.
+                    erroresLectura.add("Error en la línea "+linea);
+                }linea++;
             }
+        }catch (IOException ex) {
+            erroresLectura.add("Error al leer el archivo.");
+        }return erroresLectura;
     }
     
     /**
-     * Obtiene las instrucciones (líneas) del archivo indicado. Las restorna en una lista de string.
+     * Se encarga de crear el proceso extraído del arcgivo y lo agrega a un núcleo
+     * @param datos 
+     */
+    private void crearProceso(String[] datos){
+        Proceso procesoNuevo;
+        /* Se establecen los datos del proceso */
+        int nucleo = (int) (Math.random() * 2);// Se determina el núcleo donde se ejecutará el proceso.
+        String nombre = datos[0];
+        int estado = Proceso.PREPARADO;
+        int numeroProceso;
+        int rafaga = Integer.valueOf(datos[1]);
+        int tiempoLlegada = Integer.valueOf(datos[2]);
+        int prioridad = Integer.valueOf(datos[3]);
+        int tamanio = Integer.valueOf(datos[4]);
+        /* Se agrega al núcleo correspondiante */
+        if(nucleo == 0){
+            numeroProceso = nucleo1.obtenerNumeroProcesoSiguiente();
+            /* Si supera el límite de procesos por núcleo, se pone en espera */
+            if(numeroProceso > CPU.PROCESOSPORNUCLEO){
+                estado = Proceso.NUEVO;
+            }
+            procesoNuevo = new Proceso(nombre, estado, numeroProceso, rafaga, tiempoLlegada, prioridad, tamanio, 0, 0, 0);
+            nucleo1.agregarProceso(procesoNuevo);
+        }else{
+            numeroProceso = nucleo2.obtenerNumeroProcesoSiguiente();
+            /* Si supera el límite de procesos por núcleo, se pone en espera */
+            if(numeroProceso > CPU.PROCESOSPORNUCLEO){
+                estado = Proceso.NUEVO;
+            }
+            procesoNuevo = new Proceso(nombre, estado, numeroProceso, rafaga, tiempoLlegada, prioridad, tamanio, 0, 0, 1);
+            nucleo2.agregarProceso(procesoNuevo);
+        }
+        procesos.add(procesoNuevo);
+    }
+    
+    private Boolean esNumero(String numeroTemp){
+        try{
+            int numero = Integer.valueOf(numeroTemp);
+            return numero >= 0;
+        }catch(NumberFormatException e){
+            return false;
+        }
+    }
+    
+    private Boolean nombreProcesoRepetido(String nombreProceso){
+        int numeroProcesos = procesos.size();
+        for(int i=0; i < numeroProcesos; i++){
+            if(procesos.get(i).obtenerNombre().equals(nombreProceso)){
+                return true;
+            }
+        }return false;
+    }
+    
+    /**
+     * Verifica que los datos sean completos y tengan el formato correcto (que sean números)
+     * @param datos
+     * @return 
+     */
+    private Boolean validar_proceso(String[] datos){
+        int cantidad_datos = 0;
+        for (String dato : datos) {
+            if(cantidad_datos == 0){
+                if(dato.equals("")){
+                    return false;
+                }else{
+                    if(nombreProcesoRepetido(dato)){
+                        return false;
+                    }
+                }
+            }else{
+                if(!esNumero(dato)){
+                    return false;
+                }
+            }
+            cantidad_datos++;
+        }
+        return cantidad_datos == 5;
+    }
+    
+    /**
+     * Obtiene los procesos (líneas) del archivo indicado. Las restorna en una lista de string.
      * @param archivo
      * @return List<String>
      * @throws FileNotFoundException
      * @throws IOException 
      */
-    private List<String> obtenerInstruccionesArchivo(String archivo) throws FileNotFoundException, IOException{
+    private List<String> obtenerProcesosArchivo(String archivo) throws FileNotFoundException, IOException{
         String cadena;
-        List<String> instrucciones = new ArrayList<>();
+        List<String> procesosArchivo = new ArrayList<>();
         
         try (FileReader f = new FileReader(archivo)) {
             BufferedReader b = new BufferedReader(f);
             while((cadena = b.readLine())!=null) {
-                instrucciones.add(cadena);
+                procesosArchivo.add(cadena);
             }
         }
         
-        return instrucciones;
+        return procesosArchivo;
+    }
+    
+    /**
+     * Empieza la ejecución de los algoritmos en los núcleos
+     */
+    public void empezarEjecucion(){
+        nucleo1.empezarEjecucion();
+        nucleo2.empezarEjecucion();
+    }
+    
+    /**
+     * Limpia los posibles valores de una ejecución anterior en los núcleos
+     */
+    public void limpiarProcesos(){
+        procesos.clear();
+        nucleo1.limpiarProcesos();
+        nucleo2.limpiarProcesos();
     }
 }

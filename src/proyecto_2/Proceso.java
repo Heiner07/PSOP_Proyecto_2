@@ -22,6 +22,7 @@ public class Proceso {
     static int PREPARADO=3;
     static int TERMINADO=4;
     
+    private String nombre;
     private int estadoProceso;
     private int numeroProceso;
     private int rafaga;
@@ -35,7 +36,8 @@ public class Proceso {
     private int inicioMemoria, finMemoria;
     
 
-    public Proceso(int estadoProceso, int numeroProceso, int rafaga, int tiempoLLegada, int prioridad, int tamanio,int inicioMemoria, int finMemoria, int nucleo){
+    public Proceso(String nombre, int estadoProceso, int numeroProceso, int rafaga, int tiempoLLegada, int prioridad, int tamanio,int inicioMemoria, int finMemoria, int nucleo){
+        this.nombre=nombre;
         this.estadoProceso=estadoProceso;
         this.numeroProceso=numeroProceso;
         this.rafaga=rafaga;
@@ -83,6 +85,10 @@ public class Proceso {
         return nucleo;
     }
     
+    public String obtenerNombre(){
+        return nombre;
+    }
+    
     public int obtenerNumeroProceso(){
         return numeroProceso;
     }
@@ -117,6 +123,10 @@ public class Proceso {
     
     public int obtenerFinMemoria(){
         return finMemoria;
+    }
+    
+    public void restarRafaga(){
+        rafaga--;
     }
     
     public int obtenerTiempoEjecucion(){
