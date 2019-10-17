@@ -22,11 +22,15 @@ public class Proceso {
     static int PREPARADO=3;
     static int TERMINADO=4;
     
+    
     private String nombre;
     private int estadoProceso;
     private int numeroProceso;
     private int rafaga;
+    private int rafagaTemp;
     private int tiempoLLegada;
+    private int tiempoLlegadaTemp;
+    private boolean estadoUltimo;
     private int prioridad;
     private int tamanio;
     private int nucleo; // Se utiliza para un proceso en espera, así se sabe a que núcleo debe ir.
@@ -41,12 +45,15 @@ public class Proceso {
         this.estadoProceso=estadoProceso;
         this.numeroProceso=numeroProceso;
         this.rafaga=rafaga;
+        this.rafagaTemp = rafaga;
         this.tiempoLLegada=tiempoLLegada;
+        this.tiempoLlegadaTemp = tiempoLLegada;
         this.prioridad=prioridad;
         this.tamanio=tamanio;
         this.inicioMemoria=inicioMemoria;
         this.finMemoria=finMemoria;
         this.nucleo=nucleo;
+        this.estadoUltimo=false;
         this.segundos=0;
         this.timer=new Timer(1000, new ActionListener() {
             @Override
@@ -85,7 +92,18 @@ public class Proceso {
             segundos++;
         }
     }
-
+    public void actualizar_proceso(Proceso proc){
+        this.rafagaTemp=proc.obtenerRafagaTemp();
+        this.tiempoLlegadaTemp=proc.obtenerTiempoLLegadaTemp();  
+        this.estadoProceso = proc.obtenerEstadoProceso();
+    }
+    public boolean obtenerEstadoUltimo(){
+        return estadoUltimo;
+    
+    }
+    public void actualizarEstadoUltimo(boolean estado){
+        this.estadoUltimo = estado;
+    }
     public int obtenerNucleo(){
         return nucleo;
     }
@@ -106,8 +124,14 @@ public class Proceso {
         return rafaga;
     }
    
+    public int obtenerRafagaTemp(){
+        return rafagaTemp;
+    }
     public int obtenerTiempoLLegada(){
         return tiempoLLegada;
+    }
+    public int obtenerTiempoLLegadaTemp(){
+        return tiempoLlegadaTemp;
     }
     
     public int obtenerPrioridad(){
@@ -130,8 +154,12 @@ public class Proceso {
         return finMemoria;
     }
     
-    public void restarRafaga(){
-        rafaga--;
+    public void restarRafagaTemp(int n){
+        this.rafagaTemp -= n;
+    }
+    
+    public void sumarTiempoLlegadaTemp(int n){
+        this.tiempoLlegadaTemp = n;
     }
     
     public int obtenerTiempoEjecucion(){
