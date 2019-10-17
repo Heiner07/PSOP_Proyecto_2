@@ -57,6 +57,11 @@ public class Proceso {
         this.timer.start();
     }
     
+    /* Proceso basura, sirve de relleno para que la interfaz no pinte campos incorrectos */
+    public Proceso(){
+        this.estadoProceso = -1;
+    }
+    
     /**
      * Se encarga de actualizar los datos del proceso, en caso de que...
      * no haya encontrado espacio en memoria. Cuando encuentra espacio en memoria...

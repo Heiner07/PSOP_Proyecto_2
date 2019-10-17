@@ -372,16 +372,23 @@ public class JFVentanaPrincipal extends javax.swing.JFrame {
             int numeroProcesosN1 = procesosEjecutandoN1.size();
             int numeroProcesosN2 = procesosEjecutandoN2.size();
             JLabel label;
+            Proceso proceso;
 
             //Establezco los datos generados hasta el momento según el algoritmo ejecutado
             for(int i = 0; i < numeroProcesosN1; i++){
-                label = nucleo1.get(procesosEjecutandoN1.get(i).obtenerNumeroProceso()).get(i);
-                label.setBackground(Colores.COLORES[procesosEjecutandoN1.get(i).obtenerNumeroProceso()-1]);
+                proceso = procesosEjecutandoN1.get(i);
+                if(proceso.obtenerEstadoProceso() != -1){
+                    label = nucleo1.get(proceso.obtenerNumeroProceso()).get(i);
+                    label.setBackground(Colores.COLORES[proceso.obtenerNumeroProceso()-1]);
+                }
             }
 
             for(int i = 0; i < numeroProcesosN2; i++){
-                label = nucleo2.get(procesosEjecutandoN2.get(i).obtenerNumeroProceso()).get(i);
-                label.setBackground(Colores.COLORES[procesosEjecutandoN2.get(i).obtenerNumeroProceso()-1]);
+                proceso = procesosEjecutandoN2.get(i);
+                if(proceso.obtenerEstadoProceso() != -1){
+                    label = nucleo2.get(proceso.obtenerNumeroProceso()).get(i);
+                    label.setBackground(Colores.COLORES[proceso.obtenerNumeroProceso()-1]);
+                }
             }
         }else{
             btCargarArchivo.setEnabled(true);

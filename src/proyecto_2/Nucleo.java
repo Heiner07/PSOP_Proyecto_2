@@ -22,6 +22,7 @@ public class Nucleo {
     private Boolean ejecutar = false;
     private Timer timerOperacion;
     private int tiempoRestante=1; // Variable que indicara cuantos segendos debe esperar hasta recibir otra instrucción
+    private int tiempoEjecucion = 0; // El tiempo de ejecución en el que se encuentra el algoritmo
     private List<Proceso> procesos, ejecucionProcesos;
     
     public Nucleo(int numeroNucleo){
@@ -45,8 +46,83 @@ public class Nucleo {
      * 0 = FCFS
      */
     private void ejecutarAlgoritmo(){
+        /* Primeramente compruebo si ya finalizó */
+        if(ejecucionTerminada()){
+            ejecutar = false;
+        }
+        
+        /* Ejecuto el algoritmo correspondiente */
         if(CPU.ALGORITMO_CPU == 0){
             algoritmoFCFS();
+        }else if(CPU.ALGORITMO_CPU == 1){
+            algoritmoSJF();
+        }
+        
+        // Ajusto las variables del sistema
+        tiempoRestante = 1; // Establezco el tiempo de espera.
+        tiempoEjecucion++; // Aumento el tiempo de ejecución en el que se encuentra
+    }
+    
+    /**
+     * Se encarga de retornar el Proceso siguiente a ejecutar según las condiciones del...
+     * ... algoritmo SJF.
+     * @return Proceso
+     */
+    private Proceso obtenerProcesoSJF(){
+        int cantidadProcesos = procesos.size();
+        Proceso proceso = null, procesoTemp;
+        for(int i = 0; i < cantidadProcesos; i++){
+            // Obtengo un proceso de la lista para evaluar
+            procesoTemp = procesos.get(i);
+            
+            /* Verifico que sea menor al limite de procesos por núcleos y la ráfaga sea mayor a 0.
+              Además, el tiempo de llegada debe ser igual o menor en el que se encuentre la ejecución */
+            if(procesoTemp.obtenerTiempoLLegada() <= tiempoEjecucion &&
+                    procesoTemp.obtenerNumeroProceso() <= CPU.PROCESOSPORNUCLEO &&
+                    procesoTemp.obtenerRafaga() > 0){
+                if(proceso == null){
+                    /* Si es nulo, estoy empezando, entonces asigno el proceso */
+                    proceso = procesoTemp;
+                }else{
+                    /* Si no es nulo, entonces estoy con un proceso, lo evaluo con el siguiente y escojo el de menor...
+                    ... tiempo de llegada */
+                    if(procesoTemp.obtenerRafaga() < proceso.obtenerRafaga()){
+                        proceso = procesoTemp;
+                    }
+                }
+            }
+        }return proceso;
+    }
+    
+    /**
+     * Se encarga de ejecutar el algoritmo SJF de CPU
+     */
+    private void algoritmoSJF(){
+        /* Maneja el proceso saliente, para establecer su estado correspondiente */
+        manejarProcesoSalienteSJF();
+        /* Obtengo el proceso siguiente del SJF...
+        ...(Puede ser el mismo del paso anterior, ya que no hay un proceso con ráfaga menor) */
+        procesoEjecutando = obtenerProcesoSJF();
+        if(procesoEjecutando != null){
+            /* Si no es nulo, lo agrego a la lista de control del algoritmo (leida por la interfaz) */
+            ejecucionProcesos.add(procesoEjecutando);
+            procesoEjecutando.establecerEstado(Proceso.EN_EJECUCION); // Lo establezco en ejecución
+            procesoEjecutando.restarRafaga(); // Resto la ráfaga.
+        }else{
+            ejecucionProcesos.add(new Proceso()); // Agrego un proceso de relleno para la interfaz.
+        }
+    }
+    
+    /**
+     * Establece el estado correspondiente para el proceso saliente del algoritmo SJF
+     */
+    private void manejarProcesoSalienteSJF(){
+        if(procesoEjecutando != null){
+            if(procesoEjecutando.obtenerRafaga() == 0){
+                procesoEjecutando.establecerEstado(Proceso.TERMINADO);
+            }else{
+                procesoEjecutando.establecerEstado(Proceso.PREPARADO);
+            }
         }
     }
     
@@ -59,21 +135,23 @@ public class Nucleo {
         int cantidadProcesos = procesos.size();
         Proceso proceso = null, procesoTemp;
         for(int i = 0; i < cantidadProcesos; i++){
+            // Obtengo un proceso de la lista para evaluar
             procesoTemp = procesos.get(i);
-            if(proceso == null){
-                /* Si es nulo, estoy empezando o ya hay proceso valido por ejecutar */
-                if(procesoTemp.obtenerRafaga() > 0 && procesoTemp.obtenerNumeroProceso() <= CPU.PROCESOSPORNUCLEO){
-                    /* Si estoy empezando, asigno el proceso siempre y cuando...
-                    ...sea menor al limite de procesos por núcleos y la ráfaga sea mayor a 0 */
-                    proceso = procesos.get(i);
-                }
-            }else{
-                /* Si no es nulo, entonces estoy con un proceso, lo evaluo con el siguiente y escojo el de menor...
-                ... tiempo de llegada y que sea menor al limite de procesos por núcleos */
-                if(procesoTemp.obtenerTiempoLLegada() < proceso.obtenerTiempoLLegada() &&
-                        procesoTemp.obtenerRafaga() > 0 && procesoTemp.obtenerNumeroProceso() <= CPU.PROCESOSPORNUCLEO){
-                    
-                    proceso = procesos.get(i);
+            
+            /* Verifico que sea menor al limite de procesos por núcleos y la ráfaga sea mayor a 0.
+              Además, el tiempo de llegada debe ser igual o menor en el que se encuentre la ejecución */
+            if(procesoTemp.obtenerTiempoLLegada() <= tiempoEjecucion &&
+                    procesoTemp.obtenerNumeroProceso() <= CPU.PROCESOSPORNUCLEO &&
+                    procesoTemp.obtenerRafaga() > 0){
+                if(proceso == null){
+                    /* Si es nulo, estoy empezando, entonces asigno el proceso */
+                    proceso = procesoTemp;
+                }else{
+                    /* Si no es nulo, entonces estoy con un proceso, lo evaluo con el siguiente y escojo el de menor...
+                    ... tiempo de llegada */
+                    if(procesoTemp.obtenerTiempoLLegada() < proceso.obtenerTiempoLLegada()){
+                        proceso = procesoTemp;
+                    }
                 }
             }
         }return proceso;
@@ -93,10 +171,8 @@ public class Nucleo {
             ejecucionProcesos.add(procesoEjecutando);
             procesoEjecutando.establecerEstado(Proceso.EN_EJECUCION); // Lo establezco en ejecución
             procesoEjecutando.restarRafaga(); // Resto la ráfaga.
-            tiempoRestante = 1; // Establezco el tiempo de espera.
         }else{
-            /* Si es nulo, el algoritmo ya finalizó */
-            ejecutar = false;
+            ejecucionProcesos.add(new Proceso()); // Agrego un proceso de relleno para la interfaz.
         }
     }
     
@@ -109,6 +185,22 @@ public class Nucleo {
                 procesoEjecutando.establecerEstado(Proceso.TERMINADO);
             }
         }
+    }
+    
+    /**
+     * Se encarga de verificar si ya todos los procesos terminaron de ejecutarse.
+     * Se llama al final de ejecutarAlgoritmo
+     * @return Boolean
+     */
+    private Boolean ejecucionTerminada(){
+        int cantidadProcesos = procesos.size();
+        for(int i = 0; i < cantidadProcesos; i++){
+            /* Si algún proceso tiene ráfaga por ejecutar, entonces no se ha finalizado */
+            if(procesos.get(i).obtenerRafaga() > 0){
+                return false;
+            }
+        }
+        return true;
     }
     
     public void agregarProceso(Proceso proceso){
@@ -151,6 +243,7 @@ public class Nucleo {
         ejecucionProcesos.clear();
         procesoEjecutando = null;
         ejecutar = false;
+        tiempoEjecucion = 0;
     }
     
     public Boolean obtenerEstado(){
