@@ -56,11 +56,69 @@ public class Nucleo {
             algoritmoFCFS();
         }else if(CPU.ALGORITMO_CPU == 1){
             algoritmoSJF();
+        }else if(CPU.ALGORITMO_CPU == 4){
+            algoritmoHRRN();
         }
         
         // Ajusto las variables del sistema
         tiempoRestante = 1; // Establezco el tiempo de espera.
         tiempoEjecucion++; // Aumento el tiempo de ejecución en el que se encuentra
+    }
+    
+    /**
+     * Se encarga de retornar el Proceso siguiente a ejecutar según las condiciones del...
+     * ... algoritmo HRRN (TiempoActual - TiempoLlegada + Rafaga) / Rafaga.
+     * @return Proceso
+     */
+    private Proceso obtenerProcesoHRRN(){
+        int cantidadProcesos = procesos.size();
+        Proceso proceso = null, procesoTemp;
+        for(int i = 0; i < cantidadProcesos; i++){
+            // Obtengo un proceso de la lista para evaluar
+            procesoTemp = procesos.get(i);
+            
+            /* Verifico que sea menor al limite de procesos por núcleos y la ráfaga sea mayor a 0.
+              Además, el tiempo de llegada debe ser igual o menor en el que se encuentre la ejecución */
+            if(procesoTemp.obtenerTiempoLLegada() <= tiempoEjecucion &&
+                    procesoTemp.obtenerNumeroProceso() <= CPU.PROCESOSPORNUCLEO &&
+                    procesoTemp.obtenerRafaga() > 0){
+                if(proceso == null){
+                    /* Si es nulo, estoy empezando, entonces asigno el proceso */
+                    proceso = procesoTemp;
+                }else{
+                    /* Si no es nulo, entonces estoy con un proceso, lo evaluo con el siguiente y escojo el de mayor...
+                    ... valor */
+                    float valorProcesoTemp =
+                            (tiempoEjecucion - procesoTemp.obtenerTiempoLLegada() + procesoTemp.obtenerRafaga()) /
+                            (float)procesoTemp.obtenerRafaga();
+                    float valorProceso =
+                            (tiempoEjecucion - proceso.obtenerTiempoLLegada() + proceso.obtenerRafaga()) /
+                            (float)proceso.obtenerRafaga();
+                    if(valorProcesoTemp > valorProceso){
+                        proceso = procesoTemp;
+                    }
+                }
+            }
+        }return proceso;
+    }
+    
+    /**
+     * Se encarga de ejecutar el algoritmo HRRN de CPU
+     */
+    private void algoritmoHRRN(){
+        /* Maneja el proceso saliente, para establecer su estado correspondiente */
+        manejarProcesoSalienteFCFS();// Estoy usando el mismo del otro algoritmo, ya que funciona igual
+        /* Obtengo el proceso siguiente del HRRN...
+        ...(Puede ser el mismo del paso anterior, ya que no ha terminado la ráfaga) */
+        procesoEjecutando = obtenerProcesoHRRN();
+        if(procesoEjecutando != null){
+            /* Si no es nulo, lo agrego a la lista de control del algoritmo (leida por la interfaz) */
+            ejecucionProcesos.add(procesoEjecutando);
+            procesoEjecutando.establecerEstado(Proceso.EN_EJECUCION); // Lo establezco en ejecución
+            procesoEjecutando.restarRafaga(); // Resto la ráfaga.
+        }else{
+            ejecucionProcesos.add(new Proceso()); // Agrego un proceso de relleno para la interfaz.
+        }
     }
     
     /**
