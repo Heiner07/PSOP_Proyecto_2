@@ -124,6 +124,13 @@ public class Nucleo {
                 }else{
                     procesoAnterior.establecerEstado(Proceso.TERMINADO);
                 } 
+            }else{
+                if(procesoAnterior.obtenerRafagaTemp()>0){
+                    procesoAnterior.establecerEstado(Proceso.EN_EJECUCION); 
+                }else{
+                    procesoAnterior.establecerEstado(Proceso.TERMINADO);
+                } 
+            
             }              
         }   
     }
@@ -186,10 +193,14 @@ public class Nucleo {
                     //Si solo hay uno por hacer se agrega este
                     if(pila.isEmpty() && procesoEjecutando.obtenerRafagaTemp()>0){
                         
-                        procesoEjecutando.establecerEstado(Proceso.PREPARADO);
+                        procesoEjecutando.establecerEstado(Proceso.EN_EJECUCION);
                         buscar_proceso(procesoEjecutando);//lo actualizo
                         pila.push(procesoEjecutando);
                     }
+                    System.out.println("LA PILA SALE");
+                                pila.stream().forEach((pil) -> {
+                                System.out.println(pil.obtenerNombre());
+                                });
                     
                 }         
             }//Sale del IF PRINCIPAL
