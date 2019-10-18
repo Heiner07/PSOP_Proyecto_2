@@ -31,6 +31,7 @@ public class CPU {
     static int ALGORITMO_CPU = 0;
     static int ALGORITMO_MEMORIA = 0;
     static int PROCESOSPORNUCLEO = 6;
+    static int QUANTUM=1;
     static String[] memoriaVirtual = new String[LARGOMEMORIAVIRTUAL];
     static String[] memoria = new String[LARGOMEMORIA];
     static String[] disco = new String[LARGODISCO];
@@ -305,7 +306,9 @@ public class CPU {
     public List<Proceso> obtenerProcesos(){
         return procesos;
     }
-    
+    public void asignarQuantum(int quantum){
+        QUANTUM = quantum;
+    }
     private Proceso obtenerBCP(int numeroBCP){
         int numeroProcesos = procesos.size();
         Proceso proceso;
@@ -453,7 +456,10 @@ public class CPU {
      * Empieza la ejecución de los algoritmos en los núcleos
      */
     public void empezarEjecucion(){
+        nucleo1.asignarQuantum(QUANTUM);
+        nucleo2.asignarQuantum(QUANTUM);
         nucleo1.empezarEjecucion();
+        
         nucleo2.empezarEjecucion();
     }
     

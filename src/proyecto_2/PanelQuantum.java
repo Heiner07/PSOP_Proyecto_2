@@ -19,6 +19,7 @@ public class PanelQuantum extends javax.swing.JPanel {
     }
     
     public int obtenerTamanioQuantum(){
+        
         return (int)jspinnerQuantum.getValue();
     }
 

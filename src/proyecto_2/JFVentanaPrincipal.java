@@ -24,7 +24,7 @@ import javax.swing.table.DefaultTableModel;
 
 public class JFVentanaPrincipal extends javax.swing.JFrame {
     
-    PanelQuantum panelConfigCPU;
+    PanelQuantum panelConfigQuantum;
     PanelPaginacion panelConfigPaginacion;
     String rutaArchivo;
     Boolean archivoCargado;
@@ -847,6 +847,7 @@ public class JFVentanaPrincipal extends javax.swing.JFrame {
     private void btEjecutarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btEjecutarActionPerformed
         if(configurado){
             if(cpu.obtenerProcesos().size() > 0){
+                cpu.asignarQuantum(panelConfigQuantum.obtenerTamanioQuantum());
                 cpu.limpiarProcesos();
                 cpu.cargarPrograma(rutaArchivo);
                 configurarTablaNucleo1();
@@ -910,11 +911,11 @@ public class JFVentanaPrincipal extends javax.swing.JFrame {
         /* Establezco los paneles de configuración correspondientes con los algoritmos seleccionados */
         panelConfigAlgoritmos.removeAll();
         if(algoritmoCPUSeleccionado == 2 || algoritmoCPUSeleccionado == 3){
-            panelConfigCPU = new PanelQuantum();
-            panelConfigCPU.setBounds(0, 0, 231, 250);
-            panelConfigAlgoritmos.add(panelConfigCPU);
+            panelConfigQuantum = new PanelQuantum();
+            panelConfigQuantum.setBounds(0, 0, 231, 250);
+            panelConfigAlgoritmos.add(panelConfigQuantum);
         }else{
-            panelConfigCPU = null;
+            panelConfigQuantum = null;
         }
         
         if(algoritmoMemoriaSeleccionado == 2){
