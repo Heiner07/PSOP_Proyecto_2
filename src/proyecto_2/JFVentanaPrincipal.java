@@ -847,7 +847,9 @@ public class JFVentanaPrincipal extends javax.swing.JFrame {
     private void btEjecutarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btEjecutarActionPerformed
         if(configurado){
             if(cpu.obtenerProcesos().size() > 0){
-                cpu.asignarQuantum(panelConfigQuantum.obtenerTamanioQuantum());
+                if(algoritmoCPUSeleccionado==2 || algoritmoCPUSeleccionado==3){
+                    cpu.asignarQuantum(panelConfigQuantum.obtenerTamanioQuantum());
+                }
                 cpu.limpiarProcesos();
                 cpu.cargarPrograma(rutaArchivo);
                 configurarTablaNucleo1();
