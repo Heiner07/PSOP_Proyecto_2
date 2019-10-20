@@ -91,7 +91,7 @@
                       <Group type="102" alignment="0" attributes="0">
                           <Component id="btEjecutar" min="-2" max="-2" attributes="0"/>
                           <EmptySpace max="32767" attributes="0"/>
-                          <Component id="lbConfigMensaje" min="-2" pref="250" max="-2" attributes="0"/>
+                          <Component id="lbConfigMensaje" min="-2" pref="350" max="-2" attributes="0"/>
                       </Group>
                   </Group>
                   <EmptySpace max="-2" attributes="0"/>

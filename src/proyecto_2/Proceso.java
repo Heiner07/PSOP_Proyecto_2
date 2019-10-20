@@ -40,7 +40,7 @@ public class Proceso {
     private int inicioMemoria, finMemoria;
     
 
-    public Proceso(String nombre, int estadoProceso, int numeroProceso, int rafaga, int tiempoLLegada, int prioridad, int tamanio,int inicioMemoria, int finMemoria, int nucleo){
+    public Proceso(String nombre, int estadoProceso, int numeroProceso, int rafaga, int tiempoLLegada, int prioridad, int tamanio, int nucleo){
         this.nombre=nombre;
         this.estadoProceso=estadoProceso;
         this.numeroProceso=numeroProceso;
@@ -50,8 +50,6 @@ public class Proceso {
         this.tiempoLlegadaTemp = tiempoLLegada;
         this.prioridad=prioridad;
         this.tamanio=tamanio;
-        this.inicioMemoria=inicioMemoria;
-        this.finMemoria=finMemoria;
         this.nucleo=nucleo;
         this.estadoUltimo=false;
         this.segundos=0;
@@ -81,6 +79,21 @@ public class Proceso {
         this.estadoProceso=estadoProceso;
         this.inicioMemoria = inicioMemoria;
         this.finMemoria = finMemoria;
+    }
+    
+    public void establecerLimitesMemoria(int[] limites){
+        if(limites[0] == -1){
+            inicioMemoria = -1;
+            finMemoria = -1;
+            estadoProceso = Proceso.NUEVO;
+        }else{
+            inicioMemoria = limites[0];
+            finMemoria = limites[1];
+        }
+    }
+    
+    public int espacioFaltante(){
+        return inicioMemoria + tamanio - finMemoria;
     }
     
     /**

@@ -26,6 +26,7 @@ public class JFVentanaPrincipal extends javax.swing.JFrame {
     
     PanelQuantum panelConfigQuantum;
     PanelPaginacion panelConfigPaginacion;
+    PanelFija panelConfigFija;
     String rutaArchivo;
     Boolean archivoCargado;
     Boolean configurado;
@@ -46,7 +47,9 @@ public class JFVentanaPrincipal extends javax.swing.JFrame {
     public JFVentanaPrincipal() {
         initComponents();
         this.modeloTablaArchivos = (DefaultTableModel) jtArchivos.getModel();
-        jtArchivos.setDefaultRenderer (Object.class, new EditorCeldas());
+        jtArchivos.setDefaultRenderer (Object.class, new EditorCeldasProcesos());
+        jtMemoria.setDefaultRenderer (Object.class, new EditorCeldasMemoria());
+        jtDisco.setDefaultRenderer (Object.class, new EditorCeldasDisco());
         this.archivos=new ArrayList<>();
         this.nucleo1=new ArrayList<>();
         this.nucleo2=new ArrayList<>();
@@ -69,7 +72,7 @@ public class JFVentanaPrincipal extends javax.swing.JFrame {
         this.modeloTablaMemoria = (DefaultTableModel) jtMemoria.getModel();
         this.modeloTablaMemoria.setRowCount(0);
         for(int i=0;i<CPU.LARGOMEMORIA;i++){
-            modeloTablaMemoria.addRow(new Object[]{i,"0000"});
+            modeloTablaMemoria.addRow(new Object[]{i,"Libre"});
         }
     }
     
@@ -77,7 +80,7 @@ public class JFVentanaPrincipal extends javax.swing.JFrame {
         this.modeloTablaDisco = (DefaultTableModel) jtDisco.getModel();
         this.modeloTablaDisco.setRowCount(0);
         for(int i=0;i<CPU.LARGODISCO;i++){
-            modeloTablaDisco.addRow(new Object[]{i,"0000"});
+            modeloTablaDisco.addRow(new Object[]{i,"Libre"});
         }
     }
     
@@ -310,10 +313,13 @@ public class JFVentanaPrincipal extends javax.swing.JFrame {
      * Este método es invocado por el timer timerControlDisco.
      */
     private void controlGraficoDisco(){
-        String[] instruccion;
-        for(int i=0;i<CPU.LARGODISCO;i++){
-            instruccion = CPU.disco[i].split(" ");
-            modeloTablaDisco.setValueAt(instruccion[0], i, 1);
+        if(CPU.EN_EJECUCION){
+            String[] instruccion;
+            for(int i=0;i<CPU.LARGODISCO;i++){
+                instruccion = CPU.disco[i].split(" ");
+                modeloTablaDisco.setValueAt(instruccion[0], i, 1);
+            }
+            jtDisco.updateUI();
         }
     }
     
@@ -336,10 +342,12 @@ public class JFVentanaPrincipal extends javax.swing.JFrame {
      * Este método es invocado por el timer timerControlMemoria.
      */
     private void controlGraficoMemoria(){
-        String[] instruccion;
-        for(int i=0;i<CPU.LARGOMEMORIA;i++){
-            instruccion = CPU.memoriaVirtual[i].split(" ");
-            modeloTablaMemoria.setValueAt(instruccion[0], i, 1);
+        if(CPU.EN_EJECUCION){
+            String[] instruccion;
+            for(int i=0;i<CPU.LARGOMEMORIA;i++){
+                instruccion = CPU.memoria[i].split(" ");
+                modeloTablaMemoria.setValueAt(instruccion[0], i, 1);
+            }jtMemoria.updateUI();
         }
     }
     
@@ -362,10 +370,11 @@ public class JFVentanaPrincipal extends javax.swing.JFrame {
      * Este método es invocado por el timer timerControlNucleos.
      */
     private void controlGraficoNucleos(){
-        // Obtengo los núcleos del CPU
-        Nucleo n1 = cpu.obtenerNucleo1();
-        Nucleo n2 = cpu.obtenerNucleo2();
-        if(n1.obtenerEstado() || n2.obtenerEstado()){
+        if(CPU.EN_EJECUCION){
+            // Obtengo los núcleos del CPU
+            Nucleo n1 = cpu.obtenerNucleo1();
+            Nucleo n2 = cpu.obtenerNucleo2();
+            
             // Obtengo los procesos de cada núcleo
             List<Proceso> procesosEjecutandoN1 = n1.obtenerEjecucionProcesos();
             List<Proceso> procesosEjecutandoN2 = n2.obtenerEjecucionProcesos();
@@ -393,7 +402,50 @@ public class JFVentanaPrincipal extends javax.swing.JFrame {
         }else{
             btCargarArchivo.setEnabled(true);
             btEjecutar.setEnabled(true);
+            btUtilizarConfiguracion.setEnabled(true);
         }
+    }
+    
+    private Boolean configurarValoresDeEjecucion(){
+        int largoMemoria = (int)jspTamanioMemoria.getValue();
+        int largoDisco = (int)jspTamanioDisco.getValue();
+        if(algoritmoMemoriaSeleccionado == 0){
+            if(largoMemoria + largoDisco / 2 < panelConfigFija.obtenerTamanioParticiones()){
+                JOptionPane.showMessageDialog(this, "El tamaño del bloque es mayor al de la memoria virtual. \n"+
+                        "Memoria virtual = LargoMemoria + LargoDisco / 2.",
+                            "Error bloque",JOptionPane.ERROR_MESSAGE);
+                return false;
+            }else{
+                cpu.asignarParticionFija(panelConfigFija.obtenerTamanioParticiones());
+            }
+        }
+
+        /* Establezco los algoritmos seleccionados en el CPU */
+        CPU.ALGORITMO_CPU = algoritmoCPUSeleccionado;
+        CPU.ALGORITMO_MEMORIA = algoritmoMemoriaSeleccionado;
+
+        /* Actualizo los valores de la memoria y disco en el CPU */
+        cpu.establecerValoresMemoriaDisco(largoMemoria, largoDisco);
+
+        /* Vuelvo a formar las tablas con los valores nuevos */
+        configurarTablaDisco();
+        configurarTablaMemoria();
+        if(algoritmoCPUSeleccionado == 2 || algoritmoCPUSeleccionado == 3){
+            cpu.asignarQuantum(panelConfigQuantum.obtenerTamanioQuantum());
+        }
+        return true;
+    }
+    
+    private void empezarEjecucion(){
+        cpu.limpiarProcesos();
+        cpu.cargarPrograma(rutaArchivo);
+        configurarTablaNucleo1();
+        configurarTablaNucleo2();
+        configurarProcesosNucleos();
+        cpu.empezarEjecucion();
+        btEjecutar.setEnabled(false);
+        btCargarArchivo.setEnabled(false);
+        btUtilizarConfiguracion.setEnabled(false);
     }
 
     /**
@@ -511,7 +563,7 @@ public class JFVentanaPrincipal extends javax.swing.JFrame {
                     .addGroup(jPanel1Layout.createSequentialGroup()
                         .addComponent(btEjecutar)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                        .addComponent(lbConfigMensaje, javax.swing.GroupLayout.PREFERRED_SIZE, 250, javax.swing.GroupLayout.PREFERRED_SIZE)))
+                        .addComponent(lbConfigMensaje, javax.swing.GroupLayout.PREFERRED_SIZE, 350, javax.swing.GroupLayout.PREFERRED_SIZE)))
                 .addContainerGap())
         );
         jPanel1Layout.setVerticalGroup(
@@ -847,17 +899,9 @@ public class JFVentanaPrincipal extends javax.swing.JFrame {
     private void btEjecutarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btEjecutarActionPerformed
         if(configurado){
             if(cpu.obtenerProcesos().size() > 0){
-                if(algoritmoCPUSeleccionado==2 || algoritmoCPUSeleccionado==3){
-                    cpu.asignarQuantum(panelConfigQuantum.obtenerTamanioQuantum());
+                if(configurarValoresDeEjecucion()){
+                    empezarEjecucion();
                 }
-                cpu.limpiarProcesos();
-                cpu.cargarPrograma(rutaArchivo);
-                configurarTablaNucleo1();
-                configurarTablaNucleo2();
-                configurarProcesosNucleos();
-                cpu.empezarEjecucion();
-                btEjecutar.setEnabled(false);
-                btCargarArchivo.setEnabled(false);
             }else{
                 JOptionPane.showMessageDialog(this, "No hay procesos cargados",
                             "Cargue procesos",JOptionPane.WARNING_MESSAGE);
@@ -892,23 +936,10 @@ public class JFVentanaPrincipal extends javax.swing.JFrame {
         /* Obtengo los valores de la interfaz */
         algoritmoCPUSeleccionado = cbAlgoritmoCPU.getSelectedIndex();
         algoritmoMemoriaSeleccionado = cbAlgoritmoMemoria.getSelectedIndex();
-        int largoMemoria = (int)jspTamanioMemoria.getValue();
-        int largoDisco = (int)jspTamanioDisco.getValue();
-        
-        /* Establezco los algoritmos seleccionados en el CPU */
-        CPU.ALGORITMO_CPU = algoritmoCPUSeleccionado;
-        CPU.ALGORITMO_MEMORIA = algoritmoMemoriaSeleccionado;
-        
+
         /* Establezco el mensaje de la configuración seleccionada en la interfaz */
         lbConfigMensaje.setText("Configuración: "+ cbAlgoritmoCPU.getSelectedItem() +" y "+
                 cbAlgoritmoMemoria.getSelectedItem());
-        
-        /* Actualizo los valores de la memoria y disco en el CPU */
-        cpu.establecerValoresMemoriaDisco(largoMemoria, largoDisco);
-        
-        /* Vuelvo a formar las tablas con los valores nuevos */
-        configurarTablaDisco();
-        configurarTablaMemoria();
         
         /* Establezco los paneles de configuración correspondientes con los algoritmos seleccionados */
         panelConfigAlgoritmos.removeAll();
@@ -920,13 +951,22 @@ public class JFVentanaPrincipal extends javax.swing.JFrame {
             panelConfigQuantum = null;
         }
         
-        if(algoritmoMemoriaSeleccionado == 2){
-            panelConfigPaginacion = new PanelPaginacion();
-            panelConfigPaginacion.setBounds(0, 232, 257, 250);
-            panelConfigAlgoritmos.add(panelConfigPaginacion);
-        }else{
-            panelConfigPaginacion = null;
-        }panelConfigAlgoritmos.updateUI();
+        switch (algoritmoMemoriaSeleccionado) {
+            case 0:
+                panelConfigFija = new PanelFija();
+                panelConfigFija.setBounds(0, 232, 257, 250);
+                panelConfigAlgoritmos.add(panelConfigFija);
+                break;
+            case 2:
+                panelConfigPaginacion = new PanelPaginacion();
+                panelConfigPaginacion.setBounds(0, 232, 257, 250);
+                panelConfigAlgoritmos.add(panelConfigPaginacion);
+                break;
+            default:
+                panelConfigPaginacion = null;
+                break;
+        }
+        panelConfigAlgoritmos.updateUI();
         configurado = true;
     }//GEN-LAST:event_btUtilizarConfiguracionActionPerformed
 

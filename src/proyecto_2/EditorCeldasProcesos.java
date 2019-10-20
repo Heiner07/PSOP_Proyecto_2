@@ -14,16 +14,16 @@ import javax.swing.table.DefaultTableCellRenderer;
  *
  * @author Heiner
  */
-public class EditorCeldas extends DefaultTableCellRenderer {
+public class EditorCeldasProcesos extends DefaultTableCellRenderer {
 
     @Override
-    public Component getTableCellRendererComponent(JTable jtable, Object o, boolean bln, boolean bln1, int i, int i1) {
-        super.getTableCellRendererComponent(jtable, o, bln, bln1, i, i1);
+    public Component getTableCellRendererComponent(JTable jtable, Object valor, boolean bln, boolean bln1, int fila, int columna) {
+        super.getTableCellRendererComponent(jtable, valor, bln, bln1, fila, columna);
         this.setOpaque(false);
         this.setBackground(Color.WHITE);
         this.setForeground(Color.BLACK);
-        if(i1 == 5){
-            String estado = (String)o;
+        if(columna == 5){
+            String estado = (String)valor;
             if(estado.equals(Proceso.estadoProcesoCadena(Proceso.NUEVO))){
                 this.setOpaque(true);
                 this.setBackground(Color.RED);

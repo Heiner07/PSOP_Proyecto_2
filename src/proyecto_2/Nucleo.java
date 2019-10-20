@@ -59,7 +59,7 @@ public class Nucleo {
      * Ejecuta el algoritmo correspondiente a lo seleccionado por el usuario.
      * 0 = FCFSf
      */
-    private void ejecutarAlgoritmo(){
+    private void ejecutarAlgoritmoCPU(){
         /* Primeramente compruebo si ya finalizó */
         if(ejecucionTerminada()){
             ejecutar = false;
@@ -515,7 +515,7 @@ public class Nucleo {
     private void controlEjecucionNucleo(){
         if(tiempoRestante == 0){
             if(ejecutar){
-                ejecutarAlgoritmo();
+                ejecutarAlgoritmoCPU();
             }
         }else{
             tiempoRestante--;

@@ -32,9 +32,12 @@ public class CPU {
     static int ALGORITMO_MEMORIA = 0;
     static int PROCESOSPORNUCLEO = 6;
     static int QUANTUM=1;
+    static int PARTICIONFIJA = 64;
+    static Boolean EN_EJECUCION = false;
     static String[] memoriaVirtual = new String[LARGOMEMORIAVIRTUAL];
     static String[] memoria = new String[LARGOMEMORIA];
     static String[] disco = new String[LARGODISCO];
+    static List<BloqueFijo> BloquesFijos;
     private Nucleo nucleo1, nucleo2;
     private List<Trabajo> colaTrabajoN1, colaTrabajoN2;
     private List<Proceso> procesos;
@@ -43,7 +46,7 @@ public class CPU {
     static List<Trabajo> colaImprimir1,colaImprimir2;
     
     /* Hilos de Control */
-    private Timer timerControlColasNucleos, timerControlMemoriaVirtual,timerControlProcesos;
+    private Timer timerControlColasNucleos, timerControlMemoriaVirtual, timerControlProcesos, timerControlEjecucion;
     
     public CPU(){
         this.nucleo1 = new Nucleo(0);
@@ -53,6 +56,7 @@ public class CPU {
         CPU.colaImprimir1 = new ArrayList<>();
         CPU.colaImprimir2 = new ArrayList<>();
         this.procesos = new ArrayList<>();
+        CPU.BloquesFijos = new ArrayList<>();
         inicializaMemoria();
         inicializarDisco();
         inicializarMemoriaVirtual();
@@ -73,19 +77,19 @@ public class CPU {
     
     private void inicializaMemoria(){
         for(int i=0;i<CPU.LARGOMEMORIA;i++){
-            CPU.memoria[i] = "0000 0000 00000000";
+            CPU.memoria[i] = "Libre";
         }
     }
     
     private void inicializarDisco(){
         for(int i=0;i<CPU.LARGODISCO;i++){
-            CPU.disco[i] = "0000 0000 00000000";
+            CPU.disco[i] = "Libre";
         }
     }
     
     private void inicializarMemoriaVirtual(){
         for(int i=0;i<CPU.LARGOMEMORIAVIRTUAL;i++){
-            CPU.memoriaVirtual[i] = "0000 0000 00000000";
+            CPU.memoriaVirtual[i] = "Libre";
         }
     }
     
@@ -96,6 +100,33 @@ public class CPU {
         configurarHiloColasNucleos();
         configurarHiloMemoriaVirtual();
         configurarHiloProcesos();
+        configurarHiloEjecucion();
+    }
+    
+    /**
+     * Establece la funcion para el timer timerControlEjecucion que se encargará de establecer...
+     * ...si se termino o no la ejecución
+     */
+    private void configurarHiloEjecucion(){
+        timerControlEjecucion = new Timer(1000, new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent ae) {
+                // Función que repetirá según el intervalo asignado (1 segundo).
+                controlEjecucion();
+            }
+        });
+        // Inicializo el timer.
+        timerControlEjecucion.start();
+    }
+    
+    /**
+     * Establece la variable EN_EJECUCION en false cuando ambos núcleos terminen.
+     * Función llamada por el timerControlEjecucion.
+     */
+    private void controlEjecucion(){
+        if(!nucleo1.obtenerEstado() && !nucleo2.obtenerEstado()){
+            CPU.EN_EJECUCION = false;
+        }
     }
     
     /**
@@ -306,9 +337,15 @@ public class CPU {
     public List<Proceso> obtenerProcesos(){
         return procesos;
     }
+    
     public void asignarQuantum(int quantum){
         QUANTUM = quantum;
     }
+    
+    public void asignarParticionFija(int particion){
+        PARTICIONFIJA = particion;
+    }
+    
     private Proceso obtenerBCP(int numeroBCP){
         int numeroProcesos = procesos.size();
         Proceso proceso;
@@ -331,6 +368,9 @@ public class CPU {
         List<String> erroresLectura = new ArrayList<>(); // Almacena los errores que ocurren (para la interfaz);
         List<String> procesos_totales;
         int linea = 1;
+        
+        // Se inicializa la memoria
+        ejecutarAlgoritmoMemoria();
        
         try {
             /* Se obtienen los procesos del archivo */
@@ -369,20 +409,28 @@ public class CPU {
         /* Se agrega al núcleo correspondiante */
         if(nucleo == 0){
             numeroProceso = nucleo1.obtenerNumeroProcesoSiguiente();
+            procesoNuevo = new Proceso(nombre, estado, numeroProceso, rafaga, tiempoLlegada, prioridad, tamanio, 0);
+            asignarMemoriaProceso(procesoNuevo);
+            
             /* Si supera el límite de procesos por núcleo, se pone en espera */
             if(numeroProceso > CPU.PROCESOSPORNUCLEO){
-                estado = Proceso.NUEVO;
+                procesoNuevo.establecerEstado(Proceso.NUEVO);
+            }else if(procesoNuevo.obtenerEstadoProceso() != Proceso.NUEVO){
+                cargarProcesoMemoria(procesoNuevo);
+                nucleo1.agregarProceso(procesoNuevo);
             }
-            procesoNuevo = new Proceso(nombre, estado, numeroProceso, rafaga, tiempoLlegada, prioridad, tamanio, 0, 0, 0);
-            nucleo1.agregarProceso(procesoNuevo);
         }else{
             numeroProceso = nucleo2.obtenerNumeroProcesoSiguiente();
+            procesoNuevo = new Proceso(nombre, estado, numeroProceso, rafaga, tiempoLlegada, prioridad, tamanio, 1);
+            asignarMemoriaProceso(procesoNuevo);
+            
             /* Si supera el límite de procesos por núcleo, se pone en espera */
             if(numeroProceso > CPU.PROCESOSPORNUCLEO){
-                estado = Proceso.NUEVO;
+                procesoNuevo.establecerEstado(Proceso.NUEVO);
+            }else if(procesoNuevo.obtenerEstadoProceso() != Proceso.NUEVO){
+                cargarProcesoMemoria(procesoNuevo);
+                nucleo2.agregarProceso(procesoNuevo);
             }
-            procesoNuevo = new Proceso(nombre, estado, numeroProceso, rafaga, tiempoLlegada, prioridad, tamanio, 0, 0, 1);
-            nucleo2.agregarProceso(procesoNuevo);
         }
         procesos.add(procesoNuevo);
     }
@@ -461,6 +509,8 @@ public class CPU {
         nucleo1.empezarEjecucion();
         
         nucleo2.empezarEjecucion();
+        
+        CPU.EN_EJECUCION = true;
     }
     
     /**
@@ -468,7 +518,74 @@ public class CPU {
      */
     public void limpiarProcesos(){
         procesos.clear();
+        CPU.BloquesFijos.clear();
         nucleo1.limpiarProcesos();
         nucleo2.limpiarProcesos();
+    }
+    
+    private void ejecutarAlgoritmoMemoria(){
+        
+        Boolean controlColor = true;
+        int tamanio = 0;
+        int inicio = 0;
+        BloqueFijo bloque;
+        for(int i = 0; i < CPU.LARGOMEMORIAVIRTUAL; i++){
+            if(tamanio == PARTICIONFIJA){
+                bloque = new BloqueFijo(inicio, inicio + PARTICIONFIJA-1, 0, Boolean.FALSE, controlColor? 3 : 4);
+                BloquesFijos.add(bloque);
+                tamanio = 0;
+                inicio+=PARTICIONFIJA;
+                controlColor = !controlColor;
+            }
+            tamanio++;
+        }
+        if(tamanio > 1){
+            bloque = new BloqueFijo(inicio, inicio + tamanio-1, 0, Boolean.FALSE, controlColor? 3 : 4);
+            BloquesFijos.add(bloque);
+        }
+    }
+    
+    private void asignarMemoriaProceso(Proceso proceso){
+        if(ALGORITMO_MEMORIA == 0){
+            proceso.establecerLimitesMemoria(obtenerLimitesMemoriaFija(proceso.obtenerTamanio()));
+        }
+        
+    }
+    
+    private int[] obtenerLimitesMemoriaFija(int tamanio){
+        int cantidadBloquesFijos = BloquesFijos.size();
+        BloqueFijo bloque;
+        for(int i = 0; i < cantidadBloquesFijos; i++){
+            bloque = BloquesFijos.get(i);
+            if(!bloque.estaOcupado()){
+                bloque.asignarEspacioUsado(tamanio);
+                return bloque.obtenerLimitesUsados();
+            }
+        }return new int[]{ -1, -1};
+    }
+    
+    private void cargarProcesoMemoria(Proceso proceso){
+        int inicio = proceso.obtenerInicioMemoria();
+        int fin = proceso.obtenerFinMemoria();
+        int faltante = proceso.espacioFaltante();
+        for(int i = inicio; i <= fin; i++){
+            CPU.memoriaVirtual[i] = proceso.obtenerNombre();
+        }
+        if(faltante > 0){
+            CPU.memoriaVirtual[fin] += "+" + faltante;
+        }
+    }
+    
+    public static int obtenerColorBloque(int posicion){
+        BloqueFijo bloque;
+        int cantidadBloques = BloquesFijos.size();
+        int[] limitesBloque;
+        for(int i = 0; i < cantidadBloques; i++){
+            bloque = BloquesFijos.get(i);
+            limitesBloque = bloque.obtenerInicioFin();
+            if(limitesBloque[0] <= posicion && posicion <= limitesBloque[1]){
+                return bloque.obtenerIndiceColor();
+            }
+        }return -1;
     }
 }
