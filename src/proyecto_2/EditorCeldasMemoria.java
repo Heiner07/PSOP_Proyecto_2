@@ -24,7 +24,7 @@ public class EditorCeldasMemoria extends DefaultTableCellRenderer {
         this.setOpaque(false);
         this.setBackground(Color.WHITE);
         this.setForeground(Color.BLACK);
-        if(CPU.ALGORITMO_MEMORIA == 0){
+        if(CPU.ALGORITMO_MEMORIA == 0 || CPU.ALGORITMO_MEMORIA == 1){
             indiceColor = CPU.obtenerColorBloque(fila);
             if(indiceColor != -1){
                 this.setOpaque(true);
