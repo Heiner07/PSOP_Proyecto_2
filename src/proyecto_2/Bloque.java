@@ -50,4 +50,8 @@ public class Bloque {
     public int obtenerIndiceColor(){
         return indiceColor;
     }
+    
+    public int obtenerEspacioBloque(){
+        return fin - inicio + 1;
+    }
 }

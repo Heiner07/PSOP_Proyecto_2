@@ -27,6 +27,7 @@ public class JFVentanaPrincipal extends javax.swing.JFrame {
     PanelQuantum panelConfigQuantum;
     PanelPaginacion panelConfigPaginacion;
     PanelFija panelConfigFija;
+    PanelSegmentacion panelConfigSegmentacion;
     String rutaArchivo;
     Boolean archivoCargado;
     Boolean configurado;
@@ -417,6 +418,26 @@ public class JFVentanaPrincipal extends javax.swing.JFrame {
                 return false;
             }else{
                 cpu.asignarParticionFija(panelConfigFija.obtenerTamanioParticiones());
+            }
+        }else if(algoritmoMemoriaSeleccionado == 3){
+            int[] tamanioSegmentos = panelConfigSegmentacion.obtenerSegmentos();
+            int cantidadSegmanetos = tamanioSegmentos.length;
+            int tamanioTotalSegmentos = 0;
+            for(int i = 0; i < cantidadSegmanetos; i++){
+                if(tamanioSegmentos[i] < 1){
+                    JOptionPane.showMessageDialog(this, "El tamaño de los segmentos debe ser mayor a cero",
+                            "Error segmentos",JOptionPane.ERROR_MESSAGE);
+                return false;
+                }
+                tamanioTotalSegmentos += tamanioSegmentos[i];
+            }
+            if(tamanioTotalSegmentos > largoMemoria + largoDisco / 2){
+                JOptionPane.showMessageDialog(this, "La suma de los tamaños de los segmentos es mayor al de la memoria virtual. \n"+
+                        "Memoria virtual = LargoMemoria + LargoDisco / 2.",
+                            "Error segmentos",JOptionPane.ERROR_MESSAGE);
+                return false;
+            }else{
+                cpu.asignarSegmentos(tamanioSegmentos);
             }
         }
 
@@ -867,8 +888,8 @@ public class JFVentanaPrincipal extends javax.swing.JFrame {
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                         .addComponent(jPanel4, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                        .addComponent(panelConfigAlgoritmos, javax.swing.GroupLayout.PREFERRED_SIZE, 500, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addGap(0, 311, Short.MAX_VALUE))
+                        .addComponent(panelConfigAlgoritmos, javax.swing.GroupLayout.PREFERRED_SIZE, 510, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addGap(0, 0, Short.MAX_VALUE))
                     .addGroup(layout.createSequentialGroup()
                         .addComponent(jPanel3, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
@@ -881,10 +902,10 @@ public class JFVentanaPrincipal extends javax.swing.JFrame {
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(layout.createSequentialGroup()
                 .addContainerGap()
-                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addComponent(panelConfigAlgoritmos, javax.swing.GroupLayout.PREFERRED_SIZE, 278, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(jPanel1, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(jPanel4, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
+                    .addComponent(jPanel1, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                    .addComponent(panelConfigAlgoritmos, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                    .addComponent(jPanel4, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addComponent(jPanel2, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
@@ -961,6 +982,11 @@ public class JFVentanaPrincipal extends javax.swing.JFrame {
                 panelConfigPaginacion = new PanelPaginacion();
                 panelConfigPaginacion.setBounds(0, 232, 257, 250);
                 panelConfigAlgoritmos.add(panelConfigPaginacion);
+                break;
+            case 3:
+                panelConfigSegmentacion = new PanelSegmentacion((int)jspTamanioMemoria.getValue());
+                panelConfigSegmentacion.setBounds(0, 232, 257, 250);
+                panelConfigAlgoritmos.add(panelConfigSegmentacion);
                 break;
             default:
                 panelConfigPaginacion = null;

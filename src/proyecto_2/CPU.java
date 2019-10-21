@@ -43,6 +43,7 @@ public class CPU {
     private List<Proceso> procesos;
     private Boolean controlColor = true; // Se utiliza para asignar los colores a los bloques.
     private int procesoCola1,procesoCola2;
+    private int[] segmentos;
     
     static List<Trabajo> colaImprimir1,colaImprimir2;
     
@@ -347,6 +348,10 @@ public class CPU {
         PARTICIONFIJA = particion;
     }
     
+    public void asignarSegmentos(int[] segmentos){
+        this.segmentos = segmentos;
+    }
+    
     private Proceso obtenerBCP(int numeroBCP){
         int numeroProcesos = procesos.size();
         Proceso proceso;
@@ -528,16 +533,37 @@ public class CPU {
     private void ejecutarAlgoritmoMemoria(){
         if(ALGORITMO_MEMORIA == 0){
             crearBloquesFijos();
+        }else if(ALGORITMO_MEMORIA == 3){
+            crearSegmentos();
         }
     }
     
     private void asignarMemoriaProceso(Proceso proceso){
-        if(ALGORITMO_MEMORIA == 0){
-            proceso.establecerLimitesMemoria(obtenerLimitesMemoriaFija(proceso.obtenerTamanio()));
-        }else if(ALGORITMO_MEMORIA == 1){
-            proceso.establecerLimitesMemoria(crearBloqueDinamico(proceso.obtenerTamanio()));
+        switch (ALGORITMO_MEMORIA) {
+            case 0:
+                proceso.establecerLimitesMemoria(obtenerLimitesMemoriaFija(proceso.obtenerTamanio()));
+                break;
+            case 1:
+                proceso.establecerLimitesMemoria(crearBloqueDinamico(proceso.obtenerTamanio()));
+                break;
+            case 3:
+                proceso.establecerLimitesMemoria(obtenerLimitesMemoriaSegmento(proceso.obtenerTamanio()));
+                break;
+            default:
+                break;
         }
-        
+    }
+    
+    private void crearSegmentos(){
+        int inicio = 0;
+        int cantidadSegmentos = segmentos.length;
+        Bloque bloque;
+        for(int i = 0; i < cantidadSegmentos; i++){
+            bloque = new Bloque(inicio, inicio + segmentos[i]-1, 0, Boolean.FALSE, controlColor? 3 : 4);
+            Bloques.add(bloque);
+            inicio += segmentos[i];
+            controlColor = !controlColor;
+        }
     }
     
     private void crearBloquesFijos(){
@@ -549,7 +575,7 @@ public class CPU {
                 bloque = new Bloque(inicio, inicio + PARTICIONFIJA-1, 0, Boolean.FALSE, controlColor? 3 : 4);
                 Bloques.add(bloque);
                 tamanio = 0;
-                inicio+=PARTICIONFIJA;
+                inicio += PARTICIONFIJA;
                 controlColor = !controlColor;
             }
             tamanio++;
@@ -576,6 +602,40 @@ public class CPU {
         }else{
             return new int[]{ -1, -1 };
         }
+    }
+    
+    private int[] obtenerLimitesMemoriaSegmento(int tamanio){
+        int cantidadBloques = Bloques.size();
+        Bloque bloque, bloqueLibre = null, bloqueOptimo = null;
+        for(int i = 0; i < cantidadBloques; i++){
+            bloque = Bloques.get(i);
+            if(!bloque.estaOcupado()){
+                if(bloqueLibre == null){
+                    bloqueLibre = bloque;
+                }
+                if(bloque.obtenerEspacioBloque() == tamanio){
+                    bloque.asignarEspacioUsado(tamanio);
+                    return bloque.obtenerLimitesUsados();
+                }
+                else if(bloque.obtenerEspacioBloque() > tamanio){
+                    if(bloqueOptimo == null){
+                        bloqueOptimo = bloque;
+                    }else{
+                        if(bloque.obtenerEspacioBloque() - tamanio < bloqueOptimo.obtenerEspacioBloque() - tamanio){
+                            bloqueOptimo = bloque;
+                        }
+                    }
+                }
+            }
+        }
+        if(bloqueOptimo != null){
+            bloqueOptimo.asignarEspacioUsado(tamanio);
+            return bloqueOptimo.obtenerLimitesUsados();
+        }else if(bloqueLibre != null){
+            bloqueLibre.asignarEspacioUsado(tamanio);
+            return bloqueLibre.obtenerLimitesUsados();
+        }
+        return new int[]{ -1, -1};
     }
     
     private int[] obtenerLimitesMemoriaFija(int tamanio){
