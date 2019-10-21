@@ -206,14 +206,11 @@ public class Nucleo {
                         }else{
                             pila_temporal.push(proceso);
                         }
-                        
-
                     }              
                 }
 
             }
-        }
-        
+        }        
         return pila_temporal;
     
     
