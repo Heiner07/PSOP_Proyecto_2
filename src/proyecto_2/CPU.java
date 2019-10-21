@@ -37,10 +37,11 @@ public class CPU {
     static String[] memoriaVirtual = new String[LARGOMEMORIAVIRTUAL];
     static String[] memoria = new String[LARGOMEMORIA];
     static String[] disco = new String[LARGODISCO];
-    static List<BloqueFijo> BloquesFijos;
+    static List<Bloque> Bloques; // Se utilizan para bloques fijos o dinámicos
     private Nucleo nucleo1, nucleo2;
     private List<Trabajo> colaTrabajoN1, colaTrabajoN2;
     private List<Proceso> procesos;
+    private Boolean controlColor = true; // Se utiliza para asignar los colores a los bloques.
     private int procesoCola1,procesoCola2;
     
     static List<Trabajo> colaImprimir1,colaImprimir2;
@@ -56,7 +57,7 @@ public class CPU {
         CPU.colaImprimir1 = new ArrayList<>();
         CPU.colaImprimir2 = new ArrayList<>();
         this.procesos = new ArrayList<>();
-        CPU.BloquesFijos = new ArrayList<>();
+        CPU.Bloques = new ArrayList<>();
         inicializaMemoria();
         inicializarDisco();
         inicializarMemoriaVirtual();
@@ -518,21 +519,35 @@ public class CPU {
      */
     public void limpiarProcesos(){
         procesos.clear();
-        CPU.BloquesFijos.clear();
+        CPU.Bloques.clear();
         nucleo1.limpiarProcesos();
         nucleo2.limpiarProcesos();
+        controlColor = true;
     }
     
     private void ejecutarAlgoritmoMemoria(){
+        if(ALGORITMO_MEMORIA == 0){
+            crearBloquesFijos();
+        }
+    }
+    
+    private void asignarMemoriaProceso(Proceso proceso){
+        if(ALGORITMO_MEMORIA == 0){
+            proceso.establecerLimitesMemoria(obtenerLimitesMemoriaFija(proceso.obtenerTamanio()));
+        }else if(ALGORITMO_MEMORIA == 1){
+            proceso.establecerLimitesMemoria(crearBloqueDinamico(proceso.obtenerTamanio()));
+        }
         
-        Boolean controlColor = true;
+    }
+    
+    private void crearBloquesFijos(){
         int tamanio = 0;
         int inicio = 0;
-        BloqueFijo bloque;
+        Bloque bloque;
         for(int i = 0; i < CPU.LARGOMEMORIAVIRTUAL; i++){
             if(tamanio == PARTICIONFIJA){
-                bloque = new BloqueFijo(inicio, inicio + PARTICIONFIJA-1, 0, Boolean.FALSE, controlColor? 3 : 4);
-                BloquesFijos.add(bloque);
+                bloque = new Bloque(inicio, inicio + PARTICIONFIJA-1, 0, Boolean.FALSE, controlColor? 3 : 4);
+                Bloques.add(bloque);
                 tamanio = 0;
                 inicio+=PARTICIONFIJA;
                 controlColor = !controlColor;
@@ -540,23 +555,34 @@ public class CPU {
             tamanio++;
         }
         if(tamanio > 1){
-            bloque = new BloqueFijo(inicio, inicio + tamanio-1, 0, Boolean.FALSE, controlColor? 3 : 4);
-            BloquesFijos.add(bloque);
+            bloque = new Bloque(inicio, inicio + tamanio-1, 0, Boolean.FALSE, controlColor? 3 : 4);
+            Bloques.add(bloque);
         }
     }
     
-    private void asignarMemoriaProceso(Proceso proceso){
-        if(ALGORITMO_MEMORIA == 0){
-            proceso.establecerLimitesMemoria(obtenerLimitesMemoriaFija(proceso.obtenerTamanio()));
+    private int[] crearBloqueDinamico(int tamanio){
+        int cantidadBloquesFijos = Bloques.size();
+        Bloque bloque;
+        int finBloqueAnterior = 0;
+        for(int i = 0; i < cantidadBloquesFijos; i++){
+            bloque = Bloques.get(i);
+            finBloqueAnterior = bloque.obtenerInicioFin()[1]+1;// Se suma uno para que no toque memoria de este bloque
         }
-        
+        if(LARGOMEMORIAVIRTUAL - finBloqueAnterior >= tamanio){
+            bloque = new Bloque(finBloqueAnterior, finBloqueAnterior + tamanio-1, tamanio, Boolean.TRUE, controlColor? 3 : 4);
+            Bloques.add(bloque);
+            controlColor = !controlColor;
+            return new int[]{ finBloqueAnterior, finBloqueAnterior + tamanio -1 };
+        }else{
+            return new int[]{ -1, -1 };
+        }
     }
     
     private int[] obtenerLimitesMemoriaFija(int tamanio){
-        int cantidadBloquesFijos = BloquesFijos.size();
-        BloqueFijo bloque;
+        int cantidadBloquesFijos = Bloques.size();
+        Bloque bloque;
         for(int i = 0; i < cantidadBloquesFijos; i++){
-            bloque = BloquesFijos.get(i);
+            bloque = Bloques.get(i);
             if(!bloque.estaOcupado()){
                 bloque.asignarEspacioUsado(tamanio);
                 return bloque.obtenerLimitesUsados();
@@ -577,11 +603,11 @@ public class CPU {
     }
     
     public static int obtenerColorBloque(int posicion){
-        BloqueFijo bloque;
-        int cantidadBloques = BloquesFijos.size();
+        Bloque bloque;
+        int cantidadBloques = Bloques.size();
         int[] limitesBloque;
         for(int i = 0; i < cantidadBloques; i++){
-            bloque = BloquesFijos.get(i);
+            bloque = Bloques.get(i);
             limitesBloque = bloque.obtenerInicioFin();
             if(limitesBloque[0] <= posicion && posicion <= limitesBloque[1]){
                 return bloque.obtenerIndiceColor();

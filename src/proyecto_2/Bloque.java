@@ -9,14 +9,14 @@ package proyecto_2;
  *
  * @author Heiner
  */
-public class BloqueFijo {
+public class Bloque {
     int inicio;
     int fin;
     int espacioUsado;
     Boolean ocupado;
     int indiceColor; // Variable para pintar las filas del color correspondiente al bloque
 
-    public BloqueFijo(int inicio, int fin, int espacioUsado, Boolean ocupado, int indiceColor) {
+    public Bloque(int inicio, int fin, int espacioUsado, Boolean ocupado, int indiceColor) {
         this.inicio = inicio;
         this.fin = fin;
         this.espacioUsado = espacioUsado;

@@ -93,7 +93,7 @@ public class Proceso {
     }
     
     public int espacioFaltante(){
-        return inicioMemoria + tamanio - finMemoria;
+        return inicioMemoria + tamanio-1 - finMemoria;// Menos 1, hay que considerar la posicion 0
     }
     
     /**
