@@ -33,7 +33,8 @@ public class Nucleo {
     private int tiempoRR = 0;
     private int quantum=1;
     private boolean llenoPila = true;  
-    int largo_secuencia = 0;
+    private int largo_secuencia = 0;
+    private boolean esFeedBack = false;
     
     public Nucleo(int numeroNucleo){
         this.numeroNucleo = numeroNucleo;
@@ -74,7 +75,12 @@ public class Nucleo {
                 algoritmoSJF();
                 break;
             case 2:
-                algoritmoRR();
+                esFeedBack = false;
+                algoritmoRRFB();
+                break;
+            case 3:
+                esFeedBack = true;
+                algoritmoRRFB();
                 break;
             case 4:
                 algoritmoHRRN();
@@ -91,7 +97,7 @@ public class Nucleo {
         tiempoEjecucion++; // Aumento el tiempo de ejecución en el que se encuentra
     }
     
-    private void algoritmoRR(){
+    private void algoritmoRRFB(){
         
         if(llenoPila){
             llenoPila = false;
@@ -103,7 +109,7 @@ public class Nucleo {
                     pila.push(proceso);
 
                 });  
-                EjecucionAlgoritmoRR();
+                EjecucionAlgoritmoRRFB();
             }else{
                 ejecucionProcesos.add(new Proceso());
                 llenoPila = true;
@@ -114,8 +120,8 @@ public class Nucleo {
             
         }else{
             if(largo_secuencia==0 && !llenoPila){         
-               manejarProcesoSalienteRR();            
-               EjecucionAlgoritmoRR(); 
+               manejarProcesoSalienteRRFB();            
+               EjecucionAlgoritmoRRFB(); 
                if(!pila.isEmpty() || largo_secuencia==1){
                  procesoAInterfaz();
                }
@@ -131,7 +137,7 @@ public class Nucleo {
     
     
     }
-    private void manejarProcesoSalienteRR(){
+    private void manejarProcesoSalienteRRFB(){
         if(procesoEjecutando != null){
             
             if(procesoEjecutando.obtenerRafagaTemp() == 0){
@@ -152,7 +158,67 @@ public class Nucleo {
             }
         }
     }
-    private void EjecucionAlgoritmoRR(){
+    private Stack obtenerPrimerosPila(int tiempoInicio, int tiempoFinal){
+        Stack <Proceso> primeros_procesos = new Stack<>();
+        for(int i=tiempoInicio;i<=tiempoFinal;i++){                                    
+            for (Proceso proceso : procesos) {
+                if(proceso.obtenerTiempoLLegada()==i && !(proceso.obtenerEstadoUltimo()) && proceso.obtenerRafagaTemp()>0){
+                    primeros_procesos.add(proceso);
+                }
+            }                    
+        }//Sale del for
+        return primeros_procesos;
+    
+    
+    }
+    
+    private void restaRafaga(){
+        if(procesoEjecutando.obtenerRafagaTemp() <= quantum){
+            //Le sumo la rafaga a tiempo                               
+            tiempoRR += procesoEjecutando.obtenerRafagaTemp(); 
+            largo_secuencia = procesoEjecutando.obtenerRafagaTemp();
+            procesoEjecutando.restarRafagaTemp(procesoEjecutando.obtenerRafagaTemp());                             
+            procesoEjecutando.sumarTiempoLlegadaTemp(tiempoRR); 
+            cambiarEstado_proceso();
+
+
+        }else{
+            //Le sumo quantum a tiempo                               
+            tiempoRR += quantum;
+            largo_secuencia = quantum;
+            procesoEjecutando.restarRafagaTemp(quantum);                             
+            procesoEjecutando.sumarTiempoLlegadaTemp(tiempoRR); 
+            cambiarEstado_proceso();
+            procesoEjecutando.actualizarEstadoUltimo(true);          
+        }      
+    }
+    private Stack rellenarPilaTemporal(Stack pila_primeros){
+        Stack <Proceso> pila_temporal = new Stack<>();
+        for(int i=0;i<=tiempoRR;i++){                                    
+            for (Proceso proceso : procesos) {
+                if(proceso.obtenerTiempoLLegadaTemp()==i && proceso.obtenerRafagaTemp()>0 && !(proceso.obtenerNombre().equals(procesoEjecutando.obtenerNombre())) && !(proceso.obtenerEstadoUltimo())){
+                    if(pila.isEmpty() || !pila.contains(proceso)){
+                        //Si es FeedBack, verificamos que no se agregue el proceso que ya esta en la pila de primeros
+                        if(esFeedBack){
+                            if(!pila_primeros.contains(proceso)){
+                                pila_temporal.push(proceso);                      
+                            }                 
+                        }else{
+                            pila_temporal.push(proceso);
+                        }
+                        
+
+                    }              
+                }
+
+            }
+        }
+        
+        return pila_temporal;
+    
+    
+    }
+    private void EjecucionAlgoritmoRRFB(){
         if(!pila.isEmpty()){
             procesoEjecutando = pila.pop();     
             if(procesoEjecutando!=null){
@@ -160,54 +226,23 @@ public class Nucleo {
                //System.out.println("Le hice pop a "+procesoEjecutando.obtenerNombre()+" con rafaga de: "+ procesoEjecutando.obtenerRafagaTemp());
                 if(procesoEjecutando.obtenerRafagaTemp()> 0){
                     
-                    if(procesoEjecutando.obtenerRafagaTemp() <= quantum){
-                        //Le sumo la rafaga a tiempo                               
-                        tiempoRR += procesoEjecutando.obtenerRafagaTemp(); 
-                        largo_secuencia = procesoEjecutando.obtenerRafagaTemp();
-                        procesoEjecutando.restarRafagaTemp(procesoEjecutando.obtenerRafagaTemp());                             
-                        procesoEjecutando.sumarTiempoLlegadaTemp(tiempoRR); 
-                        cambiarEstado_proceso();
-                        
-                          
-                    }else{
-                        //Le sumo quantum a tiempo                               
-                        tiempoRR += quantum;
-                        largo_secuencia = quantum;
-                        procesoEjecutando.restarRafagaTemp(quantum);                             
-                        procesoEjecutando.sumarTiempoLlegadaTemp(tiempoRR); 
-                        cambiarEstado_proceso();
-                        
-                        
-                        procesoEjecutando.actualizarEstadoUltimo(true);          
-                    }                              
-                    
-                    Stack <Proceso> pila_temporal = new Stack<>();
-                    for(int i=0;i<=tiempoRR;i++){                                    
-                        for(int k=0;k<procesos.size();k++){
-                            if(procesos.get(k).obtenerTiempoLLegadaTemp()==i && procesos.get(k).obtenerRafagaTemp()>0 && !(procesos.get(k).obtenerNombre().equals(procesoEjecutando.obtenerNombre())) && !(procesos.get(k).obtenerEstadoUltimo())){
-                                if(pila.isEmpty()){
-                                    pila_temporal.push(procesos.get(k));
-                                }else if(pila.contains(procesos.get(k))){
-                                } else {pila_temporal.push(procesos.get(k));
-
-                                }
-                            }
-
-                        }
+                    int tiempoSinProceso = tiempoRR;
+                    //Se encarga de restar al proceso la rafaga que le corresponde.
+                    restaRafaga();                           
+                    //Obtengo los primeros procesos para el Feedback
+                    Stack <Proceso> pila_primeros = obtenerPrimerosPila(tiempoSinProceso,tiempoRR);               
+                    Stack <Proceso> pila_temporal = rellenarPilaTemporal(pila_primeros);                        
+                    if(quantum>1){reverse(pila_temporal);}              
+                    if(esFeedBack){
+                        pila.addAll(pila_primeros);
                     }
-                    if(quantum>1){reverse(pila_temporal);}
-                    pila.addAll(0,pila_temporal);
+                   
+                   pila.addAll(0,pila_temporal);
                     //Si solo hay uno por hacer se agrega este
                     if(pila.isEmpty() && procesoEjecutando.obtenerRafagaTemp()>0){
                         
                         pila.push(procesoEjecutando);
                     }
-                    
-                  /* System.out.println("LA PILA SALE");
-                                pila.stream().forEach((pil) -> {
-                                System.out.println(pil.obtenerNombre());
-                                });*/
-                    
                 }         
             }//Sale del IF PRINCIPAL
             else{ejecucionProcesos.add(new Proceso());} // Agrego un proceso de relleno para la interfaz.
@@ -223,7 +258,7 @@ public class Nucleo {
                 pila.push(procesoEjecutando);
                 tiempoRR = procesoEjecutando.obtenerTiempoLLegadaTemp();
                 //ejecucionProcesos.add(new Proceso());
-                EjecucionAlgoritmoRR();
+                EjecucionAlgoritmoRRFB();
                 
             }else{
                 ejecucionProcesos.add(new Proceso());
