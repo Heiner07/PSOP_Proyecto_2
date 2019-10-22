@@ -211,6 +211,8 @@ public class JFVentanaPrincipal extends javax.swing.JFrame {
         int cantidadProcesos = procesos.size();
         String nombre, estado;
         int rafaga, tiempoLlegada, prioridad, tamanio;
+        int tiempoFinal=0,turnaround=0;
+        double trTs=0,promedioTRTS=0,promedioTurnaround=0;
         for(int i = 0; i < cantidadProcesos; i++){
             proceso = procesos.get(i);
             nombre = proceso.obtenerNombre();
@@ -219,7 +221,7 @@ public class JFVentanaPrincipal extends javax.swing.JFrame {
             tiempoLlegada = proceso.obtenerTiempoLLegada();
             prioridad = proceso.obtenerPrioridad();
             tamanio = proceso.obtenerTamanio();
-            modeloTablaArchivos.addRow(new Object[]{nombre, rafaga, tiempoLlegada, prioridad, tamanio, estado });
+            modeloTablaArchivos.addRow(new Object[]{nombre, rafaga, tiempoLlegada, prioridad, tamanio, estado,tiempoFinal,turnaround,trTs });
         }
     }
     
@@ -291,7 +293,24 @@ public class JFVentanaPrincipal extends javax.swing.JFrame {
         int cantidadProcesos = procesos.size();
         for(int i = 0; i < cantidadProcesos; i++){
             proceso = procesos.get(i);
-            modeloTablaArchivos.setValueAt(Proceso.estadoProcesoCadena(proceso.obtenerEstadoProceso()), i, 5);
+            
+            String estadoProceso = Proceso.estadoProcesoCadena(proceso.obtenerEstadoProceso());
+            modeloTablaArchivos.setValueAt(estadoProceso, i, 5);
+            if(estadoProceso.equals("Terminado")){
+                modeloTablaArchivos.setValueAt(proceso.obtenerTiempoLLegadaTemp(), i, 6);
+                modeloTablaArchivos.setValueAt(proceso.obtenerTurnaround(), i, 7);
+               
+                modeloTablaArchivos.setValueAt(proceso.obtenerTrTs(), i, 8);
+                        // modeloTablaArchivos.addRow(new Object[]{nombre, rafaga, tiempoLlegada, prioridad, tamanio, estado,tiempoFinal,turnaround,trTs });
+
+            }else{
+                modeloTablaArchivos.setValueAt(0, i, 6);
+                modeloTablaArchivos.setValueAt(0, i, 7);
+                
+                modeloTablaArchivos.setValueAt(0, i, 8);
+                        // modeloTablaArchivos.addRow(new Object[]{nombre, rafaga, tiempoLlegada, prioridad, tamanio, estado,tiempoFinal,turnaround,trTs });
+                }
+            
         }
     }
     
@@ -535,14 +554,14 @@ public class JFVentanaPrincipal extends javax.swing.JFrame {
 
             },
             new String [] {
-                "Proceso", "Ráfaga", "Tiempo llegada", "Prioridad", "Tamaño (kb)", "Estado"
+                "Proceso", "Ráfaga", "Tiempo llegada", "Prioridad", "Tamaño (kb)", "Estado", "Tiempo final", "Turnaround", "Tr/Ts"
             }
         ) {
             Class[] types = new Class [] {
-                java.lang.String.class, java.lang.String.class, java.lang.String.class, java.lang.String.class, java.lang.String.class, java.lang.String.class
+                java.lang.String.class, java.lang.String.class, java.lang.String.class, java.lang.String.class, java.lang.String.class, java.lang.String.class, java.lang.Integer.class, java.lang.Integer.class, java.lang.Double.class
             };
             boolean[] canEdit = new boolean [] {
-                false, false, false, false, false, false
+                false, false, false, false, false, false, false, false, false
             };
 
             public Class getColumnClass(int columnIndex) {
@@ -577,7 +596,7 @@ public class JFVentanaPrincipal extends javax.swing.JFrame {
             .addGroup(jPanel1Layout.createSequentialGroup()
                 .addContainerGap()
                 .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addComponent(jScrollPane1, javax.swing.GroupLayout.DEFAULT_SIZE, 494, Short.MAX_VALUE)
+                    .addComponent(jScrollPane1, javax.swing.GroupLayout.DEFAULT_SIZE, 626, Short.MAX_VALUE)
                     .addGroup(jPanel1Layout.createSequentialGroup()
                         .addComponent(btCargarArchivo)
                         .addGap(0, 0, Short.MAX_VALUE))
@@ -593,7 +612,7 @@ public class JFVentanaPrincipal extends javax.swing.JFrame {
                 .addContainerGap()
                 .addComponent(btCargarArchivo)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(jScrollPane1, javax.swing.GroupLayout.DEFAULT_SIZE, 187, Short.MAX_VALUE)
+                .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 0, Short.MAX_VALUE)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                 .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(lbConfigMensaje)
@@ -846,7 +865,7 @@ public class JFVentanaPrincipal extends javax.swing.JFrame {
                         .addComponent(jLabel8, javax.swing.GroupLayout.Alignment.LEADING)
                         .addComponent(cbAlgoritmoMemoria, javax.swing.GroupLayout.Alignment.LEADING, 0, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
                     .addComponent(jLabel10))
-                .addContainerGap(12, Short.MAX_VALUE))
+                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
         );
         jPanel4Layout.setVerticalGroup(
             jPanel4Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -885,9 +904,9 @@ public class JFVentanaPrincipal extends javax.swing.JFrame {
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addGroup(layout.createSequentialGroup()
                         .addComponent(jPanel1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                         .addComponent(jPanel4, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                         .addComponent(panelConfigAlgoritmos, javax.swing.GroupLayout.PREFERRED_SIZE, 510, javax.swing.GroupLayout.PREFERRED_SIZE)
                         .addGap(0, 0, Short.MAX_VALUE))
                     .addGroup(layout.createSequentialGroup()

@@ -311,6 +311,8 @@ public class Nucleo {
             ejecucionProcesos.add(procesoEjecutando);
             procesoEjecutando.establecerEstado(Proceso.EN_EJECUCION); // Lo establezco en ejecución
             procesoEjecutando.restarRafagaTemp(1); // Resto la ráfaga.
+            procesoEjecutando.sumarTiempoLlegadaTemp(tiempoEjecucion+1); 
+ 
         }else{
             ejecucionProcesos.add(new Proceso()); // Agrego un proceso de relleno para la interfaz.
         }
@@ -367,6 +369,8 @@ public class Nucleo {
             ejecucionProcesos.add(procesoEjecutando);
             procesoEjecutando.establecerEstado(Proceso.EN_EJECUCION); // Lo establezco en ejecución
             procesoEjecutando.restarRafagaTemp(1); // Resto la ráfaga.
+            procesoEjecutando.sumarTiempoLlegadaTemp(tiempoEjecucion+1); 
+
         }else{
             ejecucionProcesos.add(new Proceso()); // Agrego un proceso de relleno para la interfaz.
         }
@@ -417,6 +421,8 @@ public class Nucleo {
             ejecucionProcesos.add(procesoEjecutando);
             procesoEjecutando.establecerEstado(Proceso.EN_EJECUCION); // Lo establezco en ejecución
             procesoEjecutando.restarRafagaTemp(1); // Resto la ráfaga.
+            procesoEjecutando.sumarTiempoLlegadaTemp(tiempoEjecucion+1); 
+
         }else{
             ejecucionProcesos.add(new Proceso()); // Agrego un proceso de relleno para la interfaz.
         }
@@ -450,7 +456,7 @@ public class Nucleo {
             
             /* Verifico que sea menor al limite de procesos por núcleos y la ráfaga sea mayor a 0.
               Además, el tiempo de llegada debe ser igual o menor en el que se encuentre la ejecución */
-            if(procesoTemp.obtenerTiempoLLegadaTemp() <= tiempoEjecucion &&
+            if(procesoTemp.obtenerTiempoLLegada() <= tiempoEjecucion &&
                     procesoTemp.obtenerNumeroProceso() <= CPU.PROCESOSPORNUCLEO &&
                     procesoTemp.obtenerRafagaTemp() > 0){
                 if(proceso == null){
@@ -459,7 +465,7 @@ public class Nucleo {
                 }else{
                     /* Si no es nulo, entonces estoy con un proceso, lo evaluo con el siguiente y escojo el de menor...
                     ... tiempo de llegada */
-                    if(procesoTemp.obtenerTiempoLLegadaTemp() < proceso.obtenerTiempoLLegadaTemp()){
+                    if(procesoTemp.obtenerTiempoLLegada() < proceso.obtenerTiempoLLegada()){
                         proceso = procesoTemp;
                     }
                 }
@@ -481,6 +487,8 @@ public class Nucleo {
             ejecucionProcesos.add(procesoEjecutando);
             procesoEjecutando.establecerEstado(Proceso.EN_EJECUCION); // Lo establezco en ejecución
             procesoEjecutando.restarRafagaTemp(1); // Resto la ráfaga.
+            
+            procesoEjecutando.sumarTiempoLlegadaTemp(tiempoEjecucion+1); 
         }else{
             ejecucionProcesos.add(new Proceso()); // Agrego un proceso de relleno para la interfaz.
         }

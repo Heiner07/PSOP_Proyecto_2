@@ -105,6 +105,7 @@ public class Proceso {
             segundos++;
         }
     }
+    
     public void actualizar_proceso(Proceso proc){
         this.rafagaTemp=proc.obtenerRafagaTemp();
         this.tiempoLlegadaTemp=proc.obtenerTiempoLLegadaTemp();  
@@ -114,6 +115,16 @@ public class Proceso {
         return estadoUltimo;
     
     }
+    
+    public double obtenerTrTs(){
+        return (double)(tiempoLlegadaTemp-tiempoLLegada)/rafaga;
+    
+    }
+    public int obtenerTurnaround(){
+        return (tiempoLlegadaTemp-tiempoLLegada);
+    
+    }
+    
     public void actualizarEstadoUltimo(boolean estado){
         this.estadoUltimo = estado;
     }
