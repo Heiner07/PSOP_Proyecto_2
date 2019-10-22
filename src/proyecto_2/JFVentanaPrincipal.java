@@ -650,6 +650,9 @@ public class JFVentanaPrincipal extends javax.swing.JFrame {
         });
         jtMemoria.getTableHeader().setReorderingAllowed(false);
         jScrollPane3.setViewportView(jtMemoria);
+        if (jtMemoria.getColumnModel().getColumnCount() > 0) {
+            jtMemoria.getColumnModel().getColumn(0).setPreferredWidth(25);
+        }
 
         javax.swing.GroupLayout jPanel2Layout = new javax.swing.GroupLayout(jPanel2);
         jPanel2.setLayout(jPanel2Layout);
@@ -700,6 +703,9 @@ public class JFVentanaPrincipal extends javax.swing.JFrame {
         });
         jtDisco.getTableHeader().setReorderingAllowed(false);
         jScrollPane4.setViewportView(jtDisco);
+        if (jtDisco.getColumnModel().getColumnCount() > 0) {
+            jtDisco.getColumnModel().getColumn(0).setPreferredWidth(25);
+        }
 
         javax.swing.GroupLayout jPanel3Layout = new javax.swing.GroupLayout(jPanel3);
         jPanel3.setLayout(jPanel3Layout);

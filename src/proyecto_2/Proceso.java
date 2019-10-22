@@ -7,6 +7,8 @@ package proyecto_2;
 
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.util.List;
+import javafx.util.Pair;
 import javax.swing.Timer;
 
 /**
@@ -38,6 +40,7 @@ public class Proceso {
     private int segundos;
     //Limites de memoria
     private int inicioMemoria, finMemoria;
+    private List<Pair<Integer, Integer>> frames;
     
 
     public Proceso(String nombre, int estadoProceso, int numeroProceso, int rafaga, int tiempoLLegada, int prioridad, int tamanio, int nucleo){
@@ -90,6 +93,20 @@ public class Proceso {
             inicioMemoria = limites[0];
             finMemoria = limites[1];
         }
+    }
+    
+    public void establecerFrames(List<Pair<Integer, Integer>> frames){
+        int cantidadFrames = frames.size();
+        int tamanioFrames = 0;
+        for(int i = 0; i < cantidadFrames; i++){
+            tamanioFrames += frames.get(i).getValue();
+        }
+        /* Preguntar, qué pasa si no se cargan todos los frames de un proceso,
+           lo ejecuto o libero los frames que sí pudo cargar */
+        if(tamanioFrames < tamanio){
+            estadoProceso = Proceso.NUEVO;
+        }
+        this.frames = frames;
     }
     
     public int espacioFaltante(){
@@ -165,6 +182,10 @@ public class Proceso {
     
     public int obtenerFinMemoria(){
         return finMemoria;
+    }
+    
+    public List<Pair<Integer, Integer>> obtenerFrames(){
+        return frames;
     }
     
     public void restarRafagaTemp(int n){

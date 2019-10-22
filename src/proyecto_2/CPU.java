@@ -15,6 +15,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import javafx.util.Pair;
 import javax.swing.Timer;
 
 
@@ -553,17 +554,16 @@ public class CPU {
     
     private void asignarMemoriaProceso(Proceso proceso){
         switch (ALGORITMO_MEMORIA) {
-            case 0:
+            case 0:// Memoria Fija
                 proceso.establecerLimitesMemoria(obtenerLimitesMemoriaFija(proceso.obtenerTamanio()));
                 break;
-            case 1:
+            case 1:// Memoria Dinámica
                 proceso.establecerLimitesMemoria(crearBloqueDinamico(proceso.obtenerTamanio()));
                 break;
-            case 2:
-                proceso.establecerLimitesMemoria(crearBloqueDinamico(proceso.obtenerTamanio()));
-                //proceso.establecerFrames()
+            case 2:// Memoria Paginación
+                proceso.establecerFrames(obtenerFramesParaProceso(proceso.obtenerTamanio()));
                 break;
-            case 3:
+            case 3:// Memoria Segmentación
                 proceso.establecerLimitesMemoria(obtenerLimitesMemoriaSegmento(proceso.obtenerTamanio()));
                 break;
             default:
@@ -596,9 +596,6 @@ public class CPU {
         CPU.LARGOMEMORIA = nuevoTamanioMemoria;
         CPU.LARGOMEMORIAVIRTUAL = nuevoTamanioMemoria + Bloques.size() - nuevoTamanioMemoria;
         CPU.LARGODISCO -= CPU.LARGOMEMORIAVIRTUAL - CPU.LARGOMEMORIA;
-        System.out.println("Tamaño M: "+nuevoTamanioMemoria);
-        System.out.println("Tamaño MV: "+CPU.LARGOMEMORIAVIRTUAL);
-        System.out.println("Tamaño F: "+CPU.TAMANIO_FRAME);
     }
     
     private void crearSegmentos(){
@@ -651,6 +648,31 @@ public class CPU {
         }
     }
     
+    private List<Pair<Integer, Integer>> obtenerFramesParaProceso(int tamanio){
+        List<Pair<Integer, Integer>> frames = new ArrayList<>();
+        int cantidadFrames = Bloques.size();
+        Bloque bloque;
+        for(int i = 0; i < cantidadFrames; i++){
+            bloque = Bloques.get(i);
+            if(!bloque.ocupado){
+                if(tamanio > 0){
+                    if(tamanio >= CPU.TAMANIO_FRAME){
+                        bloque.asignarEspacioUsado(CPU.TAMANIO_FRAME);
+                        tamanio -= CPU.TAMANIO_FRAME;
+                        frames.add(new Pair<>(i, CPU.TAMANIO_FRAME));
+                    }else{
+                        bloque.asignarEspacioUsado(tamanio);
+                        frames.add(new Pair<>(i, tamanio));
+                        break;
+                    }
+                }else{
+                    break;
+                }
+            }
+        }
+        return frames;
+    }
+    
     private int[] obtenerLimitesMemoriaSegmento(int tamanio){
         int cantidadBloques = Bloques.size();
         Bloque bloque, bloqueLibre = null, bloqueOptimo = null;
@@ -698,14 +720,25 @@ public class CPU {
     }
     
     private void cargarProcesoMemoria(Proceso proceso){
-        int inicio = proceso.obtenerInicioMemoria();
-        int fin = proceso.obtenerFinMemoria();
-        int faltante = proceso.espacioFaltante();
-        for(int i = inicio; i <= fin; i++){
-            CPU.memoriaVirtual[i] = proceso.obtenerNombre();
-        }
-        if(faltante > 0){
-            CPU.memoriaVirtual[fin] += "+" + faltante;
+        if(CPU.ALGORITMO_MEMORIA == 2){
+            List<Pair<Integer, Integer>> frames = proceso.obtenerFrames();
+            Pair<Integer, Integer> frame;
+            int cantidadFrames = frames.size();
+            for(int i = 0; i < cantidadFrames; i++){
+                frame = frames.get(i);
+                CPU.memoriaVirtual[frame.getKey()] = "(" + frame.getValue() + "/" +
+                        CPU.TAMANIO_FRAME + ")" + proceso.obtenerNombre();
+            }
+        }else{
+            int inicio = proceso.obtenerInicioMemoria();
+            int fin = proceso.obtenerFinMemoria();
+            int faltante = proceso.espacioFaltante();
+            for(int i = inicio; i <= fin; i++){
+                CPU.memoriaVirtual[i] = proceso.obtenerNombre();
+            }
+            if(faltante > 0){
+                CPU.memoriaVirtual[fin] += "+" + faltante;
+            }
         }
     }
     
