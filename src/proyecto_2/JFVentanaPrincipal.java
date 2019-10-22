@@ -66,6 +66,7 @@ public class JFVentanaPrincipal extends javax.swing.JFrame {
         configurarTablaNucleo1();
         configurarTablaNucleo2();
         configuararHilos();
+       
         this.setLocationRelativeTo(null);
     }
     
@@ -211,6 +212,8 @@ public class JFVentanaPrincipal extends javax.swing.JFrame {
         int cantidadProcesos = procesos.size();
         String nombre, estado;
         int rafaga, tiempoLlegada, prioridad, tamanio;
+        int tiempoFinal=0,turnaround=0;
+        double trTs=0,promedioTRTS=0,promedioTurnaround=0;
         for(int i = 0; i < cantidadProcesos; i++){
             proceso = procesos.get(i);
             nombre = proceso.obtenerNombre();
@@ -219,7 +222,7 @@ public class JFVentanaPrincipal extends javax.swing.JFrame {
             tiempoLlegada = proceso.obtenerTiempoLLegada();
             prioridad = proceso.obtenerPrioridad();
             tamanio = proceso.obtenerTamanio();
-            modeloTablaArchivos.addRow(new Object[]{nombre, rafaga, tiempoLlegada, prioridad, tamanio, estado });
+            modeloTablaArchivos.addRow(new Object[]{nombre, rafaga, tiempoLlegada, prioridad, tamanio, estado,tiempoFinal,turnaround,trTs });
         }
     }
     
@@ -280,7 +283,17 @@ public class JFVentanaPrincipal extends javax.swing.JFrame {
         // Inicializo el timer.
         timerControlProcesos.start();
     }
+    private boolean verificarProcesosTerminados(List<Proceso> procesos){
+        if(procesos.isEmpty())
+            return false;
+        for(Proceso proc: procesos){
+            int estadoProceso = (proc.obtenerEstadoProceso());
+            if(estadoProceso != Proceso.TERMINADO)
+                return false;
+        }
+        return true;
     
+    }
     /**
      * Controla los valores de los procesos que se muestran en la interfaz gráfica.
      * Este método es invocado por el timer timerControlProcesos.
@@ -288,10 +301,37 @@ public class JFVentanaPrincipal extends javax.swing.JFrame {
     private void controlGraficoProcesos(){
         List<Proceso> procesos = cpu.obtenerProcesos();
         Proceso proceso;
+        List <Proceso> procesosNucleo1 = cpu.obtenerNucleo1().obtenerProcesos();
+        List <Proceso> procesosNucleo2 = cpu.obtenerNucleo2().obtenerProcesos();
+        boolean procesosN1Terminado = verificarProcesosTerminados(procesosNucleo1);
+        boolean procesosN2Terminado = verificarProcesosTerminados(procesosNucleo2);
         int cantidadProcesos = procesos.size();
         for(int i = 0; i < cantidadProcesos; i++){
-            proceso = procesos.get(i);
-            modeloTablaArchivos.setValueAt(Proceso.estadoProcesoCadena(proceso.obtenerEstadoProceso()), i, 5);
+            proceso = procesos.get(i);            
+            String estadoProceso = Proceso.estadoProcesoCadena(proceso.obtenerEstadoProceso());
+            modeloTablaArchivos.setValueAt(estadoProceso, i, 5);
+            if(estadoProceso.equals("Terminado")){
+                modeloTablaArchivos.setValueAt(proceso.obtenerTiempoLLegadaTemp(), i, 6);
+                modeloTablaArchivos.setValueAt(proceso.obtenerTurnaround(), i, 7);
+               
+                modeloTablaArchivos.setValueAt(proceso.obtenerTrTs(), i, 8);
+                        // modeloTablaArchivos.addRow(new Object[]{nombre, rafaga, tiempoLlegada, prioridad, tamanio, estado,tiempoFinal,turnaround,trTs });
+
+            }else{
+                modeloTablaArchivos.setValueAt(0, i, 6);
+                modeloTablaArchivos.setValueAt(0, i, 7);                
+                modeloTablaArchivos.setValueAt(0, i, 8);
+                }
+        }
+        if(procesosN1Terminado){          
+            double[] promedioNucleo1 = cpu.obtenerNucleo1().obtenerPromedios();
+            promedioTrNucleo1.setText(Double.toString(promedioNucleo1[0]));
+            promedioTrTsNucleo1.setText(Double.toString(promedioNucleo1[1]));
+        }
+        if(procesosN2Terminado){      
+            double[] promedioNucleo2 = cpu.obtenerNucleo2().obtenerPromedios();
+            promedioTrNucleo2.setText(Double.toString(promedioNucleo2[0]));
+            promedioTrTsNucleo2.setText(Double.toString(promedioNucleo2[1]));
         }
     }
     
@@ -522,6 +562,14 @@ public class JFVentanaPrincipal extends javax.swing.JFrame {
         panelProcesosNucleo2 = new javax.swing.JPanel();
         jspNucleo2 = new javax.swing.JScrollPane();
         panelNucleo2 = new javax.swing.JPanel();
+        jLPromedioTrNucleo2 = new javax.swing.JLabel();
+        jLPromedioTrNucleo1 = new javax.swing.JLabel();
+        jLPromedioTrTsNucleo1 = new javax.swing.JLabel();
+        jLPromedioTrTsNucleo2 = new javax.swing.JLabel();
+        promedioTrNucleo1 = new javax.swing.JLabel();
+        promedioTrNucleo2 = new javax.swing.JLabel();
+        promedioTrTsNucleo1 = new javax.swing.JLabel();
+        promedioTrTsNucleo2 = new javax.swing.JLabel();
         jPanel4 = new javax.swing.JPanel();
         jLabel6 = new javax.swing.JLabel();
         jLabel7 = new javax.swing.JLabel();
@@ -534,9 +582,6 @@ public class JFVentanaPrincipal extends javax.swing.JFrame {
         jLabel10 = new javax.swing.JLabel();
         jspTamanioDisco = new javax.swing.JSpinner();
         panelConfigAlgoritmos = new javax.swing.JPanel();
-        jScrollPane5 = new javax.swing.JScrollPane();
-        jTable1 = new javax.swing.JTable();
-        jLabel11 = new javax.swing.JLabel();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
         setTitle("Proyecto_2");
@@ -556,14 +601,14 @@ public class JFVentanaPrincipal extends javax.swing.JFrame {
 
             },
             new String [] {
-                "Proceso", "Ráfaga", "Tiempo llegada", "Prioridad", "Tamaño (kb)", "Estado"
+                "Proceso", "Ráfaga", "Tiempo llegada", "Prioridad", "Tamaño (kb)", "Estado", "Tiempo final", "Turnaround", "Tr/Ts"
             }
         ) {
             Class[] types = new Class [] {
-                java.lang.String.class, java.lang.String.class, java.lang.String.class, java.lang.String.class, java.lang.String.class, java.lang.String.class
+                java.lang.String.class, java.lang.String.class, java.lang.String.class, java.lang.String.class, java.lang.String.class, java.lang.String.class, java.lang.Integer.class, java.lang.Integer.class, java.lang.Double.class
             };
             boolean[] canEdit = new boolean [] {
-                false, false, false, false, false, false
+                false, false, false, false, false, false, false, false, false
             };
 
             public Class getColumnClass(int columnIndex) {
@@ -598,7 +643,7 @@ public class JFVentanaPrincipal extends javax.swing.JFrame {
             .addGroup(jPanel1Layout.createSequentialGroup()
                 .addContainerGap()
                 .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addComponent(jScrollPane1, javax.swing.GroupLayout.DEFAULT_SIZE, 494, Short.MAX_VALUE)
+                    .addComponent(jScrollPane1, javax.swing.GroupLayout.DEFAULT_SIZE, 626, Short.MAX_VALUE)
                     .addGroup(jPanel1Layout.createSequentialGroup()
                         .addComponent(btCargarArchivo)
                         .addGap(0, 0, Short.MAX_VALUE))
@@ -614,7 +659,7 @@ public class JFVentanaPrincipal extends javax.swing.JFrame {
                 .addContainerGap()
                 .addComponent(btCargarArchivo)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(jScrollPane1, javax.swing.GroupLayout.DEFAULT_SIZE, 187, Short.MAX_VALUE)
+                .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 0, Short.MAX_VALUE)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                 .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(lbConfigMensaje)
@@ -779,6 +824,26 @@ public class JFVentanaPrincipal extends javax.swing.JFrame {
         panelNucleo2.setLayout(new java.awt.GridLayout(1, 0));
         jspNucleo2.setViewportView(panelNucleo2);
 
+        jLPromedioTrNucleo2.setFont(new java.awt.Font("Arial", 0, 12)); // NOI18N
+        jLPromedioTrNucleo2.setText("Promedio Turnaround:");
+
+        jLPromedioTrNucleo1.setFont(new java.awt.Font("Arial", 0, 12)); // NOI18N
+        jLPromedioTrNucleo1.setText("Promedio Turnaround:");
+
+        jLPromedioTrTsNucleo1.setFont(new java.awt.Font("Arial", 0, 12)); // NOI18N
+        jLPromedioTrTsNucleo1.setText("Promedio Tr/Ts:");
+
+        jLPromedioTrTsNucleo2.setFont(new java.awt.Font("Arial", 0, 12)); // NOI18N
+        jLPromedioTrTsNucleo2.setText("Promedio Tr/Ts:");
+
+        promedioTrNucleo1.setText("0.0");
+
+        promedioTrNucleo2.setText("0.0");
+
+        promedioTrTsNucleo1.setText("0.0");
+
+        promedioTrTsNucleo2.setText("0.0");
+
         javax.swing.GroupLayout jPanel9Layout = new javax.swing.GroupLayout(jPanel9);
         jPanel9.setLayout(jPanel9Layout);
         jPanel9Layout.setHorizontalGroup(
@@ -787,19 +852,39 @@ public class JFVentanaPrincipal extends javax.swing.JFrame {
                 .addContainerGap()
                 .addGroup(jPanel9Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addGroup(jPanel9Layout.createSequentialGroup()
-                        .addGroup(jPanel9Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
-                            .addComponent(jLabel3, javax.swing.GroupLayout.Alignment.LEADING)
-                            .addComponent(jLabel4, javax.swing.GroupLayout.Alignment.LEADING)
-                            .addComponent(jLabel5, javax.swing.GroupLayout.Alignment.LEADING))
-                        .addGap(0, 0, Short.MAX_VALUE))
-                    .addGroup(jPanel9Layout.createSequentialGroup()
                         .addComponent(jScrollPane2, javax.swing.GroupLayout.PREFERRED_SIZE, 80, javax.swing.GroupLayout.PREFERRED_SIZE)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addComponent(jspNucleo1, javax.swing.GroupLayout.DEFAULT_SIZE, 1024, Short.MAX_VALUE))
+                        .addComponent(jspNucleo1))
                     .addGroup(jPanel9Layout.createSequentialGroup()
-                        .addComponent(jScrollPane6, javax.swing.GroupLayout.PREFERRED_SIZE, 80, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addComponent(jspNucleo2)))
+                        .addGroup(jPanel9Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                            .addComponent(jScrollPane6, javax.swing.GroupLayout.PREFERRED_SIZE, 80, javax.swing.GroupLayout.PREFERRED_SIZE)
+                            .addComponent(jLabel3)
+                            .addComponent(jLabel4)
+                            .addComponent(jLabel5))
+                        .addGroup(jPanel9Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                            .addGroup(jPanel9Layout.createSequentialGroup()
+                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                                .addGroup(jPanel9Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                                    .addGroup(jPanel9Layout.createSequentialGroup()
+                                        .addComponent(jLPromedioTrNucleo2)
+                                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                                        .addComponent(promedioTrNucleo2, javax.swing.GroupLayout.PREFERRED_SIZE, 61, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                        .addGap(29, 29, 29)
+                                        .addComponent(jLPromedioTrTsNucleo2)
+                                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                                        .addComponent(promedioTrTsNucleo2, javax.swing.GroupLayout.PREFERRED_SIZE, 58, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                        .addGap(0, 667, Short.MAX_VALUE))
+                                    .addComponent(jspNucleo2)))
+                            .addGroup(jPanel9Layout.createSequentialGroup()
+                                .addGap(7, 7, 7)
+                                .addComponent(jLPromedioTrNucleo1)
+                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                                .addComponent(promedioTrNucleo1, javax.swing.GroupLayout.PREFERRED_SIZE, 61, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                .addGap(28, 28, 28)
+                                .addComponent(jLPromedioTrTsNucleo1)
+                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                                .addComponent(promedioTrTsNucleo1, javax.swing.GroupLayout.PREFERRED_SIZE, 58, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                .addGap(0, 0, Short.MAX_VALUE)))))
                 .addContainerGap())
         );
         jPanel9Layout.setVerticalGroup(
@@ -808,17 +893,31 @@ public class JFVentanaPrincipal extends javax.swing.JFrame {
                 .addGap(9, 9, 9)
                 .addComponent(jLabel3)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(jLabel4)
+                .addGroup(jPanel9Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                    .addComponent(jLabel4)
+                    .addComponent(jLPromedioTrNucleo1)
+                    .addComponent(jLPromedioTrTsNucleo1)
+                    .addComponent(promedioTrNucleo1)
+                    .addComponent(promedioTrTsNucleo1))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addGroup(jPanel9Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addComponent(jspNucleo1, javax.swing.GroupLayout.PREFERRED_SIZE, 208, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addComponent(jScrollPane2, javax.swing.GroupLayout.PREFERRED_SIZE, 193, javax.swing.GroupLayout.PREFERRED_SIZE))
                 .addGap(18, 18, 18)
-                .addComponent(jLabel5)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addGroup(jPanel9Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addComponent(jspNucleo2, javax.swing.GroupLayout.PREFERRED_SIZE, 208, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(jScrollPane6, javax.swing.GroupLayout.PREFERRED_SIZE, 193, javax.swing.GroupLayout.PREFERRED_SIZE))
+                    .addGroup(jPanel9Layout.createSequentialGroup()
+                        .addGroup(jPanel9Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                            .addComponent(jLabel5)
+                            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanel9Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                                .addComponent(jLPromedioTrTsNucleo2)
+                                .addComponent(promedioTrTsNucleo2)))
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                        .addGroup(jPanel9Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                            .addComponent(jspNucleo2, javax.swing.GroupLayout.PREFERRED_SIZE, 208, javax.swing.GroupLayout.PREFERRED_SIZE)
+                            .addComponent(jScrollPane6, javax.swing.GroupLayout.PREFERRED_SIZE, 193, javax.swing.GroupLayout.PREFERRED_SIZE)))
+                    .addGroup(jPanel9Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                        .addComponent(jLPromedioTrNucleo2)
+                        .addComponent(promedioTrNucleo2)))
                 .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
         );
 
@@ -903,43 +1002,6 @@ public class JFVentanaPrincipal extends javax.swing.JFrame {
 
         panelConfigAlgoritmos.setLayout(new java.awt.GridLayout(1, 2));
 
-        jTable1.setModel(new javax.swing.table.DefaultTableModel(
-            new Object [][] {
-                {null, null, null, null},
-                {null, null, null, null},
-                {null, null, null, null},
-                {null, null, null, null}
-            },
-            new String [] {
-                "Proceso", "TF", "TR", "TR / TS"
-            }
-        ) {
-            Class[] types = new Class [] {
-                java.lang.String.class, java.lang.String.class, java.lang.String.class, java.lang.String.class
-            };
-            boolean[] canEdit = new boolean [] {
-                false, false, false, false
-            };
-
-            public Class getColumnClass(int columnIndex) {
-                return types [columnIndex];
-            }
-
-            public boolean isCellEditable(int rowIndex, int columnIndex) {
-                return canEdit [columnIndex];
-            }
-        });
-        jScrollPane5.setViewportView(jTable1);
-        if (jTable1.getColumnModel().getColumnCount() > 0) {
-            jTable1.getColumnModel().getColumn(0).setResizable(false);
-            jTable1.getColumnModel().getColumn(1).setResizable(false);
-            jTable1.getColumnModel().getColumn(2).setResizable(false);
-            jTable1.getColumnModel().getColumn(3).setResizable(false);
-        }
-
-        jLabel11.setFont(new java.awt.Font("Arial", 0, 14)); // NOI18N
-        jLabel11.setText("Estadísticas");
-
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
         getContentPane().setLayout(layout);
         layout.setHorizontalGroup(
@@ -949,16 +1011,10 @@ public class JFVentanaPrincipal extends javax.swing.JFrame {
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addGroup(layout.createSequentialGroup()
                         .addComponent(jPanel1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                         .addComponent(jPanel4, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                        .addComponent(panelConfigAlgoritmos, javax.swing.GroupLayout.PREFERRED_SIZE, 510, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addGap(18, 18, 18)
-                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                            .addComponent(jScrollPane5, javax.swing.GroupLayout.PREFERRED_SIZE, 0, Short.MAX_VALUE)
-                            .addGroup(layout.createSequentialGroup()
-                                .addComponent(jLabel11)
-                                .addGap(0, 0, Short.MAX_VALUE))))
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                        .addComponent(panelConfigAlgoritmos, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
                     .addGroup(layout.createSequentialGroup()
                         .addComponent(jPanel3, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
@@ -974,11 +1030,7 @@ public class JFVentanaPrincipal extends javax.swing.JFrame {
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
                     .addComponent(jPanel1, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                     .addComponent(panelConfigAlgoritmos, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                    .addComponent(jPanel4, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                    .addGroup(layout.createSequentialGroup()
-                        .addComponent(jLabel11)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                        .addComponent(jScrollPane5, javax.swing.GroupLayout.PREFERRED_SIZE, 244, javax.swing.GroupLayout.PREFERRED_SIZE)))
+                    .addComponent(jPanel4, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addComponent(jPanel2, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
@@ -1075,9 +1127,12 @@ public class JFVentanaPrincipal extends javax.swing.JFrame {
     private javax.swing.JButton btUtilizarConfiguracion;
     private javax.swing.JComboBox<String> cbAlgoritmoCPU;
     private javax.swing.JComboBox<String> cbAlgoritmoMemoria;
+    private javax.swing.JLabel jLPromedioTrNucleo1;
+    private javax.swing.JLabel jLPromedioTrNucleo2;
+    private javax.swing.JLabel jLPromedioTrTsNucleo1;
+    private javax.swing.JLabel jLPromedioTrTsNucleo2;
     private javax.swing.JLabel jLabel1;
     private javax.swing.JLabel jLabel10;
-    private javax.swing.JLabel jLabel11;
     private javax.swing.JLabel jLabel2;
     private javax.swing.JLabel jLabel3;
     private javax.swing.JLabel jLabel4;
@@ -1095,9 +1150,7 @@ public class JFVentanaPrincipal extends javax.swing.JFrame {
     private javax.swing.JScrollPane jScrollPane2;
     private javax.swing.JScrollPane jScrollPane3;
     private javax.swing.JScrollPane jScrollPane4;
-    private javax.swing.JScrollPane jScrollPane5;
     private javax.swing.JScrollPane jScrollPane6;
-    private javax.swing.JTable jTable1;
     private javax.swing.JScrollPane jspNucleo1;
     private javax.swing.JScrollPane jspNucleo2;
     private javax.swing.JSpinner jspTamanioDisco;
@@ -1111,5 +1164,9 @@ public class JFVentanaPrincipal extends javax.swing.JFrame {
     private javax.swing.JPanel panelNucleo2;
     private javax.swing.JPanel panelProcesosNucleo1;
     private javax.swing.JPanel panelProcesosNucleo2;
+    private javax.swing.JLabel promedioTrNucleo1;
+    private javax.swing.JLabel promedioTrNucleo2;
+    private javax.swing.JLabel promedioTrTsNucleo1;
+    private javax.swing.JLabel promedioTrTsNucleo2;
     // End of variables declaration//GEN-END:variables
 }

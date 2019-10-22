@@ -410,7 +410,7 @@ public class CPU {
     private void crearProceso(String[] datos){
         Proceso procesoNuevo;
         /* Se establecen los datos del proceso */
-        int nucleo = 0;//(int) (Math.random() * 2);// Se determina el núcleo donde se ejecutará el proceso.
+        int nucleo = (int) (Math.random() * 2);// Se determina el núcleo donde se ejecutará el proceso.
         String nombre = datos[0];
         int estado = Proceso.PREPARADO;
         int numeroProceso;
