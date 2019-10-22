@@ -526,7 +526,16 @@ public class Nucleo {
     public void agregarProceso(Proceso proceso){
         procesos.add(proceso);
     }
+    public double[] obtenerPromedios(){
+        double promedioTr = 0,promedioTrTs=0;
+        for(Proceso proc:procesos){
+            promedioTr += proc.obtenerTurnaround();
+            promedioTrTs += proc.obtenerTrTs();   
+        }
+        return new double[]{(double)promedioTr/procesos.size(),(double)promedioTrTs/procesos.size()};
     
+    
+    }
     public List<Proceso> obtenerProcesos(){
         return procesos;
     }
