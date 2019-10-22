@@ -31,8 +31,9 @@ public class CPU {
     static int ALGORITMO_CPU = 0;
     static int ALGORITMO_MEMORIA = 0;
     static int PROCESOSPORNUCLEO = 6;
-    static int QUANTUM=1;
+    static int QUANTUM = 1;
     static int PARTICIONFIJA = 64;
+    static int TAMANIO_FRAME = 64;
     static Boolean EN_EJECUCION = false;
     static String[] memoriaVirtual = new String[LARGOMEMORIAVIRTUAL];
     static String[] memoria = new String[LARGOMEMORIA];
@@ -352,6 +353,10 @@ public class CPU {
         this.segmentos = segmentos;
     }
     
+    public void asignarFrame(int frame){
+        CPU.TAMANIO_FRAME = frame;
+    }
+    
     private Proceso obtenerBCP(int numeroBCP){
         int numeroProcesos = procesos.size();
         Proceso proceso;
@@ -531,10 +536,18 @@ public class CPU {
     }
     
     private void ejecutarAlgoritmoMemoria(){
-        if(ALGORITMO_MEMORIA == 0){
-            crearBloquesFijos();
-        }else if(ALGORITMO_MEMORIA == 3){
-            crearSegmentos();
+        switch (ALGORITMO_MEMORIA) {
+            case 0:
+                crearBloquesFijos();
+                break;
+            case 2:
+                crearFrames();
+                break;
+            case 3:
+                crearSegmentos();
+                break;
+            default:
+                break;
         }
     }
     
@@ -546,12 +559,46 @@ public class CPU {
             case 1:
                 proceso.establecerLimitesMemoria(crearBloqueDinamico(proceso.obtenerTamanio()));
                 break;
+            case 2:
+                proceso.establecerLimitesMemoria(crearBloqueDinamico(proceso.obtenerTamanio()));
+                //proceso.establecerFrames()
+                break;
             case 3:
                 proceso.establecerLimitesMemoria(obtenerLimitesMemoriaSegmento(proceso.obtenerTamanio()));
                 break;
             default:
                 break;
         }
+    }
+    
+    private void crearFrames(){
+        int tamanio = 0;
+        int numeroFrame = 0;
+        int nuevoTamanioMemoria = -1;
+        Bloque bloque;
+        for(int i = 0; i < CPU.LARGOMEMORIAVIRTUAL; i++){
+            if(nuevoTamanioMemoria == -1 && i > CPU.LARGOMEMORIA){
+                nuevoTamanioMemoria = numeroFrame;
+            }
+            if(tamanio == CPU.TAMANIO_FRAME){
+                bloque = new Bloque(numeroFrame, numeroFrame, 0, Boolean.FALSE, controlColor? 3 : 4);
+                Bloques.add(bloque);
+                tamanio = 0;
+                numeroFrame++;
+                controlColor = !controlColor;
+            }
+            tamanio++;
+        }
+        if(tamanio > 1){
+            bloque = new Bloque(numeroFrame, numeroFrame, 0, Boolean.FALSE, controlColor? 3 : 4);
+            Bloques.add(bloque);
+        }
+        CPU.LARGOMEMORIA = nuevoTamanioMemoria;
+        CPU.LARGOMEMORIAVIRTUAL = nuevoTamanioMemoria + Bloques.size() - nuevoTamanioMemoria;
+        CPU.LARGODISCO -= CPU.LARGOMEMORIAVIRTUAL - CPU.LARGOMEMORIA;
+        System.out.println("Tamaño M: "+nuevoTamanioMemoria);
+        System.out.println("Tamaño MV: "+CPU.LARGOMEMORIAVIRTUAL);
+        System.out.println("Tamaño F: "+CPU.TAMANIO_FRAME);
     }
     
     private void crearSegmentos(){

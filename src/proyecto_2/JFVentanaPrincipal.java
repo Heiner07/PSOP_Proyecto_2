@@ -429,35 +429,49 @@ public class JFVentanaPrincipal extends javax.swing.JFrame {
     private Boolean configurarValoresDeEjecucion(){
         int largoMemoria = (int)jspTamanioMemoria.getValue();
         int largoDisco = (int)jspTamanioDisco.getValue();
-        if(algoritmoMemoriaSeleccionado == 0){
-            if(largoMemoria + largoDisco / 2 < panelConfigFija.obtenerTamanioParticiones()){
-                JOptionPane.showMessageDialog(this, "El tamaño del bloque es mayor al de la memoria virtual. \n"+
-                        "Memoria virtual = LargoMemoria + LargoDisco / 2.",
+        switch (algoritmoMemoriaSeleccionado) {
+            case 0:// Memoria Fija
+                if(largoMemoria + largoDisco / 2 < panelConfigFija.obtenerTamanioParticiones()){
+                    JOptionPane.showMessageDialog(this, "El tamaño del bloque es mayor al de la memoria virtual. \n"+
+                            "Memoria virtual = LargoMemoria + LargoDisco / 2.",
                             "Error bloque",JOptionPane.ERROR_MESSAGE);
-                return false;
-            }else{
-                cpu.asignarParticionFija(panelConfigFija.obtenerTamanioParticiones());
-            }
-        }else if(algoritmoMemoriaSeleccionado == 3){
-            int[] tamanioSegmentos = panelConfigSegmentacion.obtenerSegmentos();
-            int cantidadSegmanetos = tamanioSegmentos.length;
-            int tamanioTotalSegmentos = 0;
-            for(int i = 0; i < cantidadSegmanetos; i++){
-                if(tamanioSegmentos[i] < 1){
-                    JOptionPane.showMessageDialog(this, "El tamaño de los segmentos debe ser mayor a cero",
-                            "Error segmentos",JOptionPane.ERROR_MESSAGE);
-                return false;
+                    return false;
+                }else{
+                    cpu.asignarParticionFija(panelConfigFija.obtenerTamanioParticiones());
                 }
-                tamanioTotalSegmentos += tamanioSegmentos[i];
-            }
-            if(tamanioTotalSegmentos > largoMemoria + largoDisco / 2){
-                JOptionPane.showMessageDialog(this, "La suma de los tamaños de los segmentos es mayor al de la memoria virtual. \n"+
-                        "Memoria virtual = LargoMemoria + LargoDisco / 2.",
+                break;
+            case 2:// Memoria Paginación
+                if(largoMemoria + largoDisco / 2 < panelConfigPaginacion.obtenerTamanioFrames()){
+                    JOptionPane.showMessageDialog(this, "El tamaño del frame es mayor al de la memoria virtual. \n"+
+                            "Memoria virtual = LargoMemoria + LargoDisco / 2.",
+                            "Error bloque",JOptionPane.ERROR_MESSAGE);
+                    return false;
+                }else{
+                    cpu.asignarFrame(panelConfigPaginacion.obtenerTamanioFrames());
+                }
+                break;
+            case 3:// Memoria Segmentación
+                int[] tamanioSegmentos = panelConfigSegmentacion.obtenerSegmentos();
+                int cantidadSegmanetos = tamanioSegmentos.length;
+                int tamanioTotalSegmentos = 0;
+                for(int i = 0; i < cantidadSegmanetos; i++){
+                    if(tamanioSegmentos[i] < 1){
+                        JOptionPane.showMessageDialog(this, "El tamaño de los segmentos debe ser mayor a cero",
+                                "Error segmentos",JOptionPane.ERROR_MESSAGE);
+                        return false;
+                    }
+                    tamanioTotalSegmentos += tamanioSegmentos[i];
+                }   if(tamanioTotalSegmentos > largoMemoria + largoDisco / 2){
+                    JOptionPane.showMessageDialog(this, "La suma de los tamaños de los segmentos es mayor al de la memoria virtual. \n"+
+                            "Memoria virtual = LargoMemoria + LargoDisco / 2.",
                             "Error segmentos",JOptionPane.ERROR_MESSAGE);
-                return false;
-            }else{
-                cpu.asignarSegmentos(tamanioSegmentos);
-            }
+                    return false;
+                }else{
+                    cpu.asignarSegmentos(tamanioSegmentos);
+                }
+                break;
+            default:
+                break;
         }
 
         /* Establezco los algoritmos seleccionados en el CPU */
@@ -479,6 +493,10 @@ public class JFVentanaPrincipal extends javax.swing.JFrame {
     private void empezarEjecucion(){
         cpu.limpiarProcesos();
         cpu.cargarPrograma(rutaArchivo);
+        if(algoritmoMemoriaSeleccionado == 2){
+            configurarTablaMemoria();
+            configurarTablaDisco();
+        }
         configurarTablaNucleo1();
         configurarTablaNucleo2();
         configurarProcesosNucleos();
@@ -535,6 +553,9 @@ public class JFVentanaPrincipal extends javax.swing.JFrame {
         jLabel10 = new javax.swing.JLabel();
         jspTamanioDisco = new javax.swing.JSpinner();
         panelConfigAlgoritmos = new javax.swing.JPanel();
+        jScrollPane5 = new javax.swing.JScrollPane();
+        jTable1 = new javax.swing.JTable();
+        jLabel11 = new javax.swing.JLabel();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
         setTitle("Proyecto_2");
@@ -895,6 +916,43 @@ public class JFVentanaPrincipal extends javax.swing.JFrame {
 
         panelConfigAlgoritmos.setLayout(new java.awt.GridLayout(1, 2));
 
+        jTable1.setModel(new javax.swing.table.DefaultTableModel(
+            new Object [][] {
+                {null, null, null, null},
+                {null, null, null, null},
+                {null, null, null, null},
+                {null, null, null, null}
+            },
+            new String [] {
+                "Proceso", "TF", "TR", "TR / TS"
+            }
+        ) {
+            Class[] types = new Class [] {
+                java.lang.String.class, java.lang.String.class, java.lang.String.class, java.lang.String.class
+            };
+            boolean[] canEdit = new boolean [] {
+                false, false, false, false
+            };
+
+            public Class getColumnClass(int columnIndex) {
+                return types [columnIndex];
+            }
+
+            public boolean isCellEditable(int rowIndex, int columnIndex) {
+                return canEdit [columnIndex];
+            }
+        });
+        jScrollPane5.setViewportView(jTable1);
+        if (jTable1.getColumnModel().getColumnCount() > 0) {
+            jTable1.getColumnModel().getColumn(0).setResizable(false);
+            jTable1.getColumnModel().getColumn(1).setResizable(false);
+            jTable1.getColumnModel().getColumn(2).setResizable(false);
+            jTable1.getColumnModel().getColumn(3).setResizable(false);
+        }
+
+        jLabel11.setFont(new java.awt.Font("Arial", 0, 14)); // NOI18N
+        jLabel11.setText("Estadísticas");
+
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
         getContentPane().setLayout(layout);
         layout.setHorizontalGroup(
@@ -908,7 +966,12 @@ public class JFVentanaPrincipal extends javax.swing.JFrame {
                         .addComponent(jPanel4, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                         .addComponent(panelConfigAlgoritmos, javax.swing.GroupLayout.PREFERRED_SIZE, 510, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addGap(0, 0, Short.MAX_VALUE))
+                        .addGap(18, 18, 18)
+                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                            .addComponent(jScrollPane5, javax.swing.GroupLayout.PREFERRED_SIZE, 0, Short.MAX_VALUE)
+                            .addGroup(layout.createSequentialGroup()
+                                .addComponent(jLabel11)
+                                .addGap(0, 0, Short.MAX_VALUE))))
                     .addGroup(layout.createSequentialGroup()
                         .addComponent(jPanel3, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
@@ -924,7 +987,11 @@ public class JFVentanaPrincipal extends javax.swing.JFrame {
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
                     .addComponent(jPanel1, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                     .addComponent(panelConfigAlgoritmos, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                    .addComponent(jPanel4, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                    .addComponent(jPanel4, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                    .addGroup(layout.createSequentialGroup()
+                        .addComponent(jLabel11)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                        .addComponent(jScrollPane5, javax.swing.GroupLayout.PREFERRED_SIZE, 244, javax.swing.GroupLayout.PREFERRED_SIZE)))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addComponent(jPanel2, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
@@ -1023,6 +1090,7 @@ public class JFVentanaPrincipal extends javax.swing.JFrame {
     private javax.swing.JComboBox<String> cbAlgoritmoMemoria;
     private javax.swing.JLabel jLabel1;
     private javax.swing.JLabel jLabel10;
+    private javax.swing.JLabel jLabel11;
     private javax.swing.JLabel jLabel2;
     private javax.swing.JLabel jLabel3;
     private javax.swing.JLabel jLabel4;
@@ -1040,7 +1108,9 @@ public class JFVentanaPrincipal extends javax.swing.JFrame {
     private javax.swing.JScrollPane jScrollPane2;
     private javax.swing.JScrollPane jScrollPane3;
     private javax.swing.JScrollPane jScrollPane4;
+    private javax.swing.JScrollPane jScrollPane5;
     private javax.swing.JScrollPane jScrollPane6;
+    private javax.swing.JTable jTable1;
     private javax.swing.JScrollPane jspNucleo1;
     private javax.swing.JScrollPane jspNucleo2;
     private javax.swing.JSpinner jspTamanioDisco;
