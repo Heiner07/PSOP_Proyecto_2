@@ -9,6 +9,8 @@ import java.awt.Color;
 import java.awt.Font;
 import java.awt.GridLayout;
 import java.awt.event.ActionEvent;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
@@ -31,6 +33,8 @@ public class JFVentanaPrincipal extends javax.swing.JFrame {
     String rutaArchivo;
     Boolean archivoCargado;
     Boolean configurado;
+    Boolean ultimaActualizacionMemoria;//Para actualizar con los valores resultantes en la memoria
+    Boolean ultimaActualizacionDisco;//Para actualizar con los valores resultantes en el disco
     DefaultTableModel modeloTablaArchivos, modeloTablaMemoria, modeloTablaDisco, modeloTablaNucleo1, modeloTablaNucleo2;
     List<String> archivos;
     List<List<JLabel>> nucleo1, nucleo2;
@@ -59,6 +63,10 @@ public class JFVentanaPrincipal extends javax.swing.JFrame {
         this.cpu=new CPU();
         this.archivoCargado=false;
         this.configurado=false;
+        this.ultimaActualizacionMemoria=false;
+        this.ultimaActualizacionDisco=false;
+        this.lbMensajePaginacion1.setVisible(false);
+        this.lbMensajePaginacion2.setVisible(false);
         this.algoritmoCPUSeleccionado = 0;
         this.algoritmoMemoriaSeleccionado = 0;
         configurarTablaMemoria();
@@ -81,8 +89,14 @@ public class JFVentanaPrincipal extends javax.swing.JFrame {
     private void configurarTablaDisco(){
         this.modeloTablaDisco = (DefaultTableModel) jtDisco.getModel();
         this.modeloTablaDisco.setRowCount(0);
+        int desplazamiento = 0; //Variable para paginación, para establecer la posicion de memoria, despues de los frames
         for(int i=0;i<CPU.LARGODISCO;i++){
-            modeloTablaDisco.addRow(new Object[]{i,"Libre"});
+            if(CPU.ALGORITMO_MEMORIA == 2 && i + CPU.LARGOMEMORIA > CPU.LARGOMEMORIAVIRTUAL - 1){
+                modeloTablaDisco.addRow(new Object[]{desplazamiento + CPU.LARGODISCO - (CPU.LARGOMEMORIAVIRTUAL - CPU.LARGOMEMORIA),"Libre"});
+                desplazamiento++;
+            }else{
+                modeloTablaDisco.addRow(new Object[]{i,"Libre"});
+            }
         }
     }
     
@@ -141,7 +155,7 @@ public class JFVentanaPrincipal extends javax.swing.JFrame {
             label.setOpaque(true);
             panelProcesosNucleo1.add(label);
             procesosN1.add(label);
-        }
+        }panelProcesosNucleo1.updateUI();
     }
     
     /**
@@ -198,7 +212,7 @@ public class JFVentanaPrincipal extends javax.swing.JFrame {
             label.setOpaque(true);
             panelProcesosNucleo2.add(label);
             procesosN2.add(label);
-        }
+        }panelProcesosNucleo2.updateUI();
     }
     
     /**
@@ -213,7 +227,7 @@ public class JFVentanaPrincipal extends javax.swing.JFrame {
         String nombre, estado;
         int rafaga, tiempoLlegada, prioridad, tamanio;
         int tiempoFinal=0,turnaround=0;
-        double trTs=0,promedioTRTS=0,promedioTurnaround=0;
+        double trTs=0;
         for(int i = 0; i < cantidadProcesos; i++){
             proceso = procesos.get(i);
             nombre = proceso.obtenerNombre();
@@ -242,20 +256,38 @@ public class JFVentanaPrincipal extends javax.swing.JFrame {
         
         //Establezco los procesos en la interfaz
         for(int i = 0; i < numeroProcesosN1 && i < CPU.PROCESOSPORNUCLEO; i++){
+            final int nProceso = i;
             label = procesosN1.get(i);
             label.setText(procesosObtenidosN1.get(i).obtenerNombre());
             label.setBackground(Colores.COLORES[i]);
             if(i == 2 || i == 5){
                 label.setForeground(Color.WHITE);
             }
+            if(algoritmoMemoriaSeleccionado == 2){
+                label.addMouseListener(new MouseAdapter() {
+                    @Override
+                    public void mouseClicked(MouseEvent me) {
+                        cargarPageTableProceso(0, nProceso);
+                    }
+                });
+            }
         }
         
         for(int i = 0; i < numeroProcesosN2 && i < CPU.PROCESOSPORNUCLEO; i++){
+            final int nProceso = i;
             label = procesosN2.get(i);
             label.setText(procesosObtenidosN2.get(i).obtenerNombre());
             label.setBackground(Colores.COLORES[i]);
             if(i == 2 || i == 5){
                 label.setForeground(Color.WHITE);
+            }
+            if(algoritmoMemoriaSeleccionado == 2){
+                label.addMouseListener(new MouseAdapter() {
+                    @Override
+                    public void mouseClicked(MouseEvent me) {
+                        cargarPageTableProceso(1, nProceso);
+                    }
+                });
             }
         }
     }
@@ -283,6 +315,7 @@ public class JFVentanaPrincipal extends javax.swing.JFrame {
         // Inicializo el timer.
         timerControlProcesos.start();
     }
+    
     private boolean verificarProcesosTerminados(List<Proceso> procesos){
         if(procesos.isEmpty())
             return false;
@@ -354,7 +387,10 @@ public class JFVentanaPrincipal extends javax.swing.JFrame {
      * Este método es invocado por el timer timerControlDisco.
      */
     private void controlGraficoDisco(){
-        if(CPU.EN_EJECUCION){
+        if(CPU.EN_EJECUCION || !ultimaActualizacionDisco){
+            if(!CPU.EN_EJECUCION){
+                ultimaActualizacionDisco = true;
+            }
             String[] instruccion;
             for(int i=0;i<CPU.LARGODISCO;i++){
                 instruccion = CPU.disco[i].split(" ");
@@ -383,7 +419,10 @@ public class JFVentanaPrincipal extends javax.swing.JFrame {
      * Este método es invocado por el timer timerControlMemoria.
      */
     private void controlGraficoMemoria(){
-        if(CPU.EN_EJECUCION){
+        if(CPU.EN_EJECUCION || !ultimaActualizacionMemoria){
+            if(!CPU.EN_EJECUCION){
+                ultimaActualizacionMemoria = true;
+            }
             String[] instruccion;
             for(int i=0;i<CPU.LARGOMEMORIA;i++){
                 instruccion = CPU.memoria[i].split(" ");
@@ -447,6 +486,19 @@ public class JFVentanaPrincipal extends javax.swing.JFrame {
         }
     }
     
+    private void cargarPageTableProceso(int nucleo, int numero){
+        Proceso proceso;
+        PageTable pTable;
+        if(nucleo == 0){
+            proceso = cpu.obtenerNucleo1().obtenerProcesos().get(numero);
+            pTable = new PageTable(this, true, proceso);
+        }else{
+            proceso = cpu.obtenerNucleo2().obtenerProcesos().get(numero);
+            pTable = new PageTable(this, true, proceso);
+        }
+        pTable.setVisible(true);
+    }
+    
     private Boolean configurarValoresDeEjecucion(){
         int largoMemoria = (int)jspTamanioMemoria.getValue();
         int largoDisco = (int)jspTamanioDisco.getValue();
@@ -482,7 +534,8 @@ public class JFVentanaPrincipal extends javax.swing.JFrame {
                         return false;
                     }
                     tamanioTotalSegmentos += tamanioSegmentos[i];
-                }   if(tamanioTotalSegmentos > largoMemoria + largoDisco / 2){
+                }
+                if(tamanioTotalSegmentos > largoMemoria + largoDisco / 2){
                     JOptionPane.showMessageDialog(this, "La suma de los tamaños de los segmentos es mayor al de la memoria virtual. \n"+
                             "Memoria virtual = LargoMemoria + LargoDisco / 2.",
                             "Error segmentos",JOptionPane.ERROR_MESSAGE);
@@ -511,13 +564,23 @@ public class JFVentanaPrincipal extends javax.swing.JFrame {
         return true;
     }
     
+    /**
+     * Se encarga de empezar la ejecución y reiniciar el valor de las variables
+     */
     private void empezarEjecucion(){
         cpu.limpiarProcesos();
         cpu.cargarPrograma(rutaArchivo);
+        /* Según el algoritmo de memoria, se ajusta algunos componentes en la interfaz*/
         if(algoritmoMemoriaSeleccionado == 2){
             configurarTablaMemoria();
             configurarTablaDisco();
+            lbMensajePaginacion1.setVisible(true);
+            lbMensajePaginacion2.setVisible(true);
+        }else{
+            lbMensajePaginacion1.setVisible(false);
+            lbMensajePaginacion2.setVisible(false);
         }
+        
         configurarTablaNucleo1();
         configurarTablaNucleo2();
         configurarProcesosNucleos();
@@ -525,6 +588,8 @@ public class JFVentanaPrincipal extends javax.swing.JFrame {
         btEjecutar.setEnabled(false);
         btCargarArchivo.setEnabled(false);
         btUtilizarConfiguracion.setEnabled(false);
+        ultimaActualizacionDisco = false;
+        ultimaActualizacionMemoria = false;
     }
 
     /**
@@ -570,6 +635,8 @@ public class JFVentanaPrincipal extends javax.swing.JFrame {
         promedioTrNucleo2 = new javax.swing.JLabel();
         promedioTrTsNucleo1 = new javax.swing.JLabel();
         promedioTrTsNucleo2 = new javax.swing.JLabel();
+        lbMensajePaginacion1 = new javax.swing.JLabel();
+        lbMensajePaginacion2 = new javax.swing.JLabel();
         jPanel4 = new javax.swing.JPanel();
         jLabel6 = new javax.swing.JLabel();
         jLabel7 = new javax.swing.JLabel();
@@ -844,6 +911,12 @@ public class JFVentanaPrincipal extends javax.swing.JFrame {
 
         promedioTrTsNucleo2.setText("0.0");
 
+        lbMensajePaginacion1.setFont(new java.awt.Font("Arial", 0, 12)); // NOI18N
+        lbMensajePaginacion1.setText("Haga click sobre un proceso para ver su Page Table");
+
+        lbMensajePaginacion2.setFont(new java.awt.Font("Arial", 0, 12)); // NOI18N
+        lbMensajePaginacion2.setText("Haga click sobre un proceso para ver su Page Table");
+
         javax.swing.GroupLayout jPanel9Layout = new javax.swing.GroupLayout(jPanel9);
         jPanel9.setLayout(jPanel9Layout);
         jPanel9Layout.setHorizontalGroup(
@@ -873,7 +946,9 @@ public class JFVentanaPrincipal extends javax.swing.JFrame {
                                         .addComponent(jLPromedioTrTsNucleo2)
                                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                                         .addComponent(promedioTrTsNucleo2, javax.swing.GroupLayout.PREFERRED_SIZE, 58, javax.swing.GroupLayout.PREFERRED_SIZE)
-                                        .addGap(0, 667, Short.MAX_VALUE))
+                                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                                        .addComponent(lbMensajePaginacion2)
+                                        .addGap(0, 374, Short.MAX_VALUE))
                                     .addComponent(jspNucleo2)))
                             .addGroup(jPanel9Layout.createSequentialGroup()
                                 .addGap(7, 7, 7)
@@ -884,6 +959,8 @@ public class JFVentanaPrincipal extends javax.swing.JFrame {
                                 .addComponent(jLPromedioTrTsNucleo1)
                                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                                 .addComponent(promedioTrTsNucleo1, javax.swing.GroupLayout.PREFERRED_SIZE, 58, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                                .addComponent(lbMensajePaginacion1)
                                 .addGap(0, 0, Short.MAX_VALUE)))))
                 .addContainerGap())
         );
@@ -898,7 +975,8 @@ public class JFVentanaPrincipal extends javax.swing.JFrame {
                     .addComponent(jLPromedioTrNucleo1)
                     .addComponent(jLPromedioTrTsNucleo1)
                     .addComponent(promedioTrNucleo1)
-                    .addComponent(promedioTrTsNucleo1))
+                    .addComponent(promedioTrTsNucleo1)
+                    .addComponent(lbMensajePaginacion1))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addGroup(jPanel9Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addComponent(jspNucleo1, javax.swing.GroupLayout.PREFERRED_SIZE, 208, javax.swing.GroupLayout.PREFERRED_SIZE)
@@ -910,7 +988,8 @@ public class JFVentanaPrincipal extends javax.swing.JFrame {
                             .addComponent(jLabel5)
                             .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanel9Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                                 .addComponent(jLPromedioTrTsNucleo2)
-                                .addComponent(promedioTrTsNucleo2)))
+                                .addComponent(promedioTrTsNucleo2)
+                                .addComponent(lbMensajePaginacion2)))
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                         .addGroup(jPanel9Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                             .addComponent(jspNucleo2, javax.swing.GroupLayout.PREFERRED_SIZE, 208, javax.swing.GroupLayout.PREFERRED_SIZE)
@@ -1159,6 +1238,8 @@ public class JFVentanaPrincipal extends javax.swing.JFrame {
     private javax.swing.JTable jtDisco;
     private javax.swing.JTable jtMemoria;
     private javax.swing.JLabel lbConfigMensaje;
+    private javax.swing.JLabel lbMensajePaginacion1;
+    private javax.swing.JLabel lbMensajePaginacion2;
     private javax.swing.JPanel panelConfigAlgoritmos;
     private javax.swing.JPanel panelNucleo1;
     private javax.swing.JPanel panelNucleo2;

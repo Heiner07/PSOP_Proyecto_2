@@ -84,6 +84,10 @@ public class Proceso {
         this.finMemoria = finMemoria;
     }
     
+    /**
+     * Establece los límites de memoria que usará el proceso
+     * @param limites 
+     */
     public void establecerLimitesMemoria(int[] limites){
         if(limites[0] == -1){
             inicioMemoria = -1;
@@ -95,6 +99,10 @@ public class Proceso {
         }
     }
     
+    /**
+     * Para el algoritmo de memoria Paginación, establece los frames que usará el proceso
+     * @param frames 
+     */
     public void establecerFrames(List<Pair<Integer, Integer>> frames){
         int cantidadFrames = frames.size();
         int tamanioFrames = 0;
@@ -109,6 +117,11 @@ public class Proceso {
         this.frames = frames;
     }
     
+    /**
+     * Retorna el espacio que le falto por cargar al proceso, de acuerdo con los...
+     * ...límites del proceso y su tamaño
+     * @return 
+     */
     public int espacioFaltante(){
         return inicioMemoria + tamanio-1 - finMemoria;// Menos 1, hay que considerar la posicion 0
     }
@@ -128,6 +141,7 @@ public class Proceso {
         this.tiempoLlegadaTemp=proc.obtenerTiempoLLegadaTemp();  
         this.estadoProceso = proc.obtenerEstadoProceso();
     }
+    
     public boolean obtenerEstadoUltimo(){
         return estadoUltimo;
     
@@ -135,16 +149,16 @@ public class Proceso {
     
     public double obtenerTrTs(){
         return (double)(tiempoLlegadaTemp-tiempoLLegada)/rafaga;
-    
     }
+    
     public int obtenerTurnaround(){
         return (tiempoLlegadaTemp-tiempoLLegada);
-    
     }
     
     public void actualizarEstadoUltimo(boolean estado){
         this.estadoUltimo = estado;
     }
+    
     public int obtenerNucleo(){
         return nucleo;
     }
@@ -168,9 +182,11 @@ public class Proceso {
     public int obtenerRafagaTemp(){
         return rafagaTemp;
     }
+    
     public int obtenerTiempoLLegada(){
         return tiempoLLegada;
     }
+    
     public int obtenerTiempoLLegadaTemp(){
         return tiempoLlegadaTemp;
     }

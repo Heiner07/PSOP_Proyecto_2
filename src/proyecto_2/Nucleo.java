@@ -19,7 +19,7 @@ import javax.swing.Timer;
  */
 public class Nucleo {
     
-    private Proceso procesoEjecutando = null,procesoAnterior=null;
+    private Proceso procesoEjecutando = null;
     private int numeroNucleo;
     private Boolean ejecutar = false;
     private Timer timerOperacion;
@@ -41,9 +41,7 @@ public class Nucleo {
         this.procesos = new ArrayList<>();
         this.ejecucionProcesos = new ArrayList<>();
         this.pila = new Stack<>();
-        //System.out.println("Este es el quantum: "+CPU.QUANTUM);
         this.quantum = 1;
-        
         
         timerOperacion = new Timer(1000, new ActionListener() {
             @Override
@@ -129,19 +127,20 @@ public class Nucleo {
         
         }
     }
+    
     private void procesoAInterfaz(){
         ejecucionProcesos.add(procesoEjecutando);
         procesoEjecutando.establecerEstado(Proceso.EN_EJECUCION);
         
-        largo_secuencia--; 
-    
-    
+        largo_secuencia--;
     }
+    
     private void manejarProcesoSalienteRRFB(){
         if(procesoEjecutando != null){
             
             if(procesoEjecutando.obtenerRafagaTemp() == 0){
                 procesoEjecutando.establecerEstado(Proceso.TERMINADO);
+                liberarMemoria(procesoEjecutando);
             }else{
                 if(pila.peek().obtenerNombre().equals(procesoEjecutando.obtenerNombre())){
                     procesoEjecutando.establecerEstado(Proceso.EN_EJECUCION);
@@ -150,7 +149,8 @@ public class Nucleo {
                 
             }
         }
-    } 
+    }
+    
     private void cambiarEstado_proceso(){
         for(int k=0;k<procesos.size();k++){
             if(procesos.get(k).obtenerEstadoUltimo()){           
@@ -158,6 +158,7 @@ public class Nucleo {
             }
         }
     }
+    
     private Stack obtenerPrimerosPila(int tiempoInicio, int tiempoFinal){
         Stack <Proceso> primeros_procesos = new Stack<>();
         for(int i=tiempoInicio;i<=tiempoFinal;i++){                                    
@@ -168,8 +169,6 @@ public class Nucleo {
             }                    
         }//Sale del for
         return primeros_procesos;
-    
-    
     }
     
     private void restaRafaga(){
@@ -192,6 +191,7 @@ public class Nucleo {
             procesoEjecutando.actualizarEstadoUltimo(true);          
         }      
     }
+    
     private Stack rellenarPilaTemporal(Stack pila_primeros){
         Stack <Proceso> pila_temporal = new Stack<>();
         for(int i=0;i<=tiempoRR;i++){                                    
@@ -212,9 +212,8 @@ public class Nucleo {
             }
         }        
         return pila_temporal;
-    
-    
     }
+    
     private void EjecucionAlgoritmoRRFB(){
         if(!pila.isEmpty()){
             procesoEjecutando = pila.pop();     
@@ -311,8 +310,7 @@ public class Nucleo {
             ejecucionProcesos.add(procesoEjecutando);
             procesoEjecutando.establecerEstado(Proceso.EN_EJECUCION); // Lo establezco en ejecución
             procesoEjecutando.restarRafagaTemp(1); // Resto la ráfaga.
-            procesoEjecutando.sumarTiempoLlegadaTemp(tiempoEjecucion+1); 
- 
+            procesoEjecutando.sumarTiempoLlegadaTemp(tiempoEjecucion+1);
         }else{
             ejecucionProcesos.add(new Proceso()); // Agrego un proceso de relleno para la interfaz.
         }
@@ -436,6 +434,7 @@ public class Nucleo {
             //System.out.println("ESTOY ATENDIENDO: "+procesoEjecutando.obtenerNombre());
             if(procesoEjecutando.obtenerRafagaTemp() == 0){
                 procesoEjecutando.establecerEstado(Proceso.TERMINADO);
+                liberarMemoria(procesoEjecutando);
             }else{
                 procesoEjecutando.establecerEstado(Proceso.PREPARADO);
             }
@@ -501,6 +500,21 @@ public class Nucleo {
         if(procesoEjecutando != null){
             if(procesoEjecutando.obtenerRafagaTemp() == 0){
                 procesoEjecutando.establecerEstado(Proceso.TERMINADO);
+                liberarMemoria(procesoEjecutando);
+            }
+        }
+    }
+    
+    /**
+     * Se encarga de liberar las posiciones de memoria que utiliza el proceso
+     * @param proceso 
+     */
+    private void liberarMemoria(Proceso proceso){
+        if(CPU.ALGORITMO_MEMORIA != 2){//Por el momento excluyo el de Paginación
+            int inicio = proceso.obtenerInicioMemoria();
+            int fin = proceso.obtenerFinMemoria();
+            for(int i = inicio; i <= fin; i++){
+                CPU.memoriaVirtual[i] = "Libre";
             }
         }
     }
@@ -523,9 +537,14 @@ public class Nucleo {
         return true;
     }
     
+    /**
+     * Agrega un proceso al núcleo (enviado por la CPU)
+     * @param proceso 
+     */
     public void agregarProceso(Proceso proceso){
         procesos.add(proceso);
     }
+    
     public double[] obtenerPromedios(){
         double promedioTr = 0,promedioTrTs=0;
         for(Proceso proc:procesos){
@@ -533,9 +552,8 @@ public class Nucleo {
             promedioTrTs += proc.obtenerTrTs();   
         }
         return new double[]{(double)promedioTr/procesos.size(),(double)promedioTrTs/procesos.size()};
-    
-    
     }
+    
     public List<Proceso> obtenerProcesos(){
         return procesos;
     }
@@ -553,7 +571,6 @@ public class Nucleo {
     }
     public void asignarQuantum(int quantumAsiganr){
         quantum = quantumAsiganr;
-    
     }
     
     /**
@@ -571,6 +588,9 @@ public class Nucleo {
         }
     }
     
+    /**
+     * Reinicia los valores del núcleo
+     */
     public void limpiarProcesos(){
         procesos.clear();
         ejecucionProcesos.clear();
@@ -585,14 +605,5 @@ public class Nucleo {
     
     public Boolean obtenerEstado(){
         return ejecutar;
-    }
-    
-    /**
-     * Recibe el proceso de la cola de trabajo. Y lo pone a ejecutar.
-     * @param proceso
-     * @throws InterruptedException 
-     */
-    public void recibirProceso(Proceso proceso) throws InterruptedException{
-        
     }
 }

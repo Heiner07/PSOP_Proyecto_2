@@ -13,8 +13,6 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import javafx.util.Pair;
 import javax.swing.Timer;
 
@@ -41,13 +39,9 @@ public class CPU {
     static String[] disco = new String[LARGODISCO];
     static List<Bloque> Bloques; // Se utilizan para bloques fijos o dinámicos
     private Nucleo nucleo1, nucleo2;
-    private List<Trabajo> colaTrabajoN1, colaTrabajoN2;
     private List<Proceso> procesos;
     private Boolean controlColor = true; // Se utiliza para asignar los colores a los bloques.
-    private int procesoCola1,procesoCola2;
     private int[] segmentos;
-    
-    static List<Trabajo> colaImprimir1,colaImprimir2;
     
     /* Hilos de Control */
     private Timer timerControlColasNucleos, timerControlMemoriaVirtual, timerControlProcesos, timerControlEjecucion;
@@ -55,10 +49,6 @@ public class CPU {
     public CPU(){
         this.nucleo1 = new Nucleo(0);
         this.nucleo2 = new Nucleo(1);
-        this.colaTrabajoN1 = new ArrayList<>();
-        this.colaTrabajoN2 = new ArrayList<>();
-        CPU.colaImprimir1 = new ArrayList<>();
-        CPU.colaImprimir2 = new ArrayList<>();
         this.procesos = new ArrayList<>();
         CPU.Bloques = new ArrayList<>();
         inicializaMemoria();
@@ -67,6 +57,11 @@ public class CPU {
         configurarHilos();
     }
     
+    /**
+     * Ajusta los valores de memoria y disco (y virtual), con lo indicado por el usuario.
+     * @param lMemoria
+     * @param lDisco 
+     */
     public void establecerValoresMemoriaDisco(int lMemoria, int lDisco){
         LARGOMEMORIA = lMemoria;
         LARGODISCO = lDisco;
@@ -101,9 +96,7 @@ public class CPU {
      * Se encarga de llamar a las distintas funciones que controlan la ejecucion de la instrucciones.
      */
     private void configurarHilos(){
-        configurarHiloColasNucleos();
         configurarHiloMemoriaVirtual();
-        configurarHiloProcesos();
         configurarHiloEjecucion();
     }
     
@@ -135,7 +128,7 @@ public class CPU {
     
     /**
      * Establece la funcion para el timer timerControlMemoriaVirtual que se encargará de establecer...
-     * ...los valores de la memoria virtual en la memoria o en el disco (como memoria virtual).
+     * ...los valores de la memoria virtual en la memoria o en el disco.
      */
     private void configurarHiloMemoriaVirtual(){
         timerControlMemoriaVirtual = new Timer(1000, new ActionListener() {
@@ -163,179 +156,12 @@ public class CPU {
         }
     }
     
-    /**
-     * Establece la funcion para el timer timerControlColasNucleos que se encargará de enviar...
-     * ...las instrucciones al procesador correspondiente.
-     */
-    private void configurarHiloColasNucleos(){
-        timerControlColasNucleos = new Timer(1000, new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent ae) {
-                try {
-                    // Función que repetirá según el intervalo asignado (1 segundo).
-                    verificarColas();
-                    
-                    
-                } catch (InterruptedException ex) {
-                    // Modificar para mostrar mensaje correspondiente.
-                    Logger.getLogger(CPU.class.getName()).log(Level.SEVERE, null, ex);
-                }
-            }
-        });
-        // Inicializo el timer.
-        timerControlColasNucleos.start();
-    }
-    /**
-     * Establece la funcion para el timer timerControlProcesos que se encargará de enviar...
-     * ...los procesos constantemente
-     */
-    private void configurarHiloProcesos(){
-        timerControlProcesos = new Timer(1000, (ActionEvent ae) -> {
-            // Modificar para mostrar mensaje correspondiente.           
-            verificarProcesos();
-        });
-        // Inicializo el timer.
-        timerControlProcesos.start();
-    }
-    /**
-     * Verifica cuando un núcleo queda disponible y le envía el proceso siguiente.
-     * Función llamada por el timerControlColasNucleos.
-     * @throws InterruptedException 
-     */
-    private void verificarColas() throws InterruptedException{
-
-        if(!colaTrabajoN1.isEmpty()){              
-            if(nucleo1.obtenerEstado()){              
-               colaImprimir1.clear();
-               Proceso procesoAEjecutar = retornarProceso(1);
-               listadoColas(1);
-               if(colaImprimir1.isEmpty()){
-                   colaImprimir1 = new ArrayList<>();              
-               }             
-               procesoCola1++;
-               if(procesoAEjecutar!=null){                  
-                   nucleo1.recibirProceso(procesoAEjecutar);                  
-               }               
-            }
-        }
-        if(!colaTrabajoN2.isEmpty()){
-            if(nucleo2.obtenerEstado()){
-               colaImprimir2.clear();
-               Proceso procesoAEjecutar = retornarProceso(2);
-               listadoColas(2);
-               if(colaImprimir2.isEmpty()){
-                   colaImprimir2 = new ArrayList<>();              
-               }
-               procesoCola2++;
-               if(procesoAEjecutar!=null){                  
-                   nucleo2.recibirProceso(procesoAEjecutar);                 
-               }
-            }
-        }
-    }
-    
-    /*
-    Verifica constantemente cuando los procesos estan en espera de ser colocados a la memoria.
-    Lo llama el hilo correspondiente
-    Si tiene espacio en memoria, edita las posiciones de memoria.
-    */
-    private void verificarProcesos(){
-        
-    }
-   
-    /**
-     * Se encarga de retornar el BCP del proceso que se va a ejecutar en el núcleo
-     * Con respecto a numeroCola que ingresa ya sea 1 o 2
-     * @param numeroCola
-     * @return  un BCP*/
-    private Proceso retornarProceso(int numeroCola){
-        if(numeroCola == 1){
-            int largoCola = colaTrabajoN1.size()-1;
-            
-            if(procesoCola1 > largoCola){
-               procesoCola1 = 0;          
-            }
-            int proc;
-            for(;procesoCola1<=largoCola;procesoCola1++){
-                proc = colaTrabajoN1.get(procesoCola1).numeroBCP;
-                Proceso procesoAEjecutar = obtenerBCP(proc);
-                /*if(procesoAEjecutar.obtenerPC() <= procesoAEjecutar.obtenerFinMemoria() && procesoAEjecutar.obtenerEstadoProceso()!=BCP.TERMINADO){
-                    return procesoAEjecutar;                   
-                }*/                            
-            }           
-        }else{
-            int largoCola = colaTrabajoN2.size()-1;           
-            if(procesoCola2 > largoCola){
-               procesoCola2 = 0;          
-            }                   
-            int proc;
-            for(;procesoCola2<=largoCola;procesoCola2++){
-                proc = colaTrabajoN2.get(procesoCola2).numeroBCP;
-                Proceso procesoAEjecutar = obtenerBCP(proc);
-                /*if(procesoAEjecutar.obtenerPC() <= procesoAEjecutar.obtenerFinMemoria() && procesoAEjecutar.obtenerEstadoProceso()!=BCP.TERMINADO){
-                    return procesoAEjecutar;                  
-                }*/                           
-            }  
-        }//SALE ELSE
-        return null;
-    }
-    
-    /**
-     *Entra como parametro el número de cola, se encarga
-     * de llenar las colas de trabajo con sus respectivos procesos
-     * e instrucciones que se van a ejecutar
-     * @param numeroCola
-     */
-    private void listadoColas(int numeroCola){
-        Trabajo trabajo;
-        int numProceso;
-        if(numeroCola == 1){           
-            numProceso = procesoCola1;
-            int largoCola = colaTrabajoN1.size()-1;          
-            if(numProceso > largoCola){
-               numProceso = 0;          
-            }
-            int proc;
-            for(;numProceso<=largoCola;numProceso++){
-                proc = colaTrabajoN1.get(numProceso).numeroBCP;
-                Proceso procesoAEjecutar = obtenerBCP(proc);
-                /*if(procesoAEjecutar.obtenerPC() <= procesoAEjecutar.obtenerFinMemoria() && procesoAEjecutar.obtenerEstadoProceso()!=BCP.TERMINADO){
-                    trabajo=new Trabajo(0, proc,memoriaVirtual[procesoAEjecutar.obtenerPC()]);
-                    colaImprimir1.add(trabajo);                   
-                } */                            
-            }            
-        }else{          
-            numProceso = procesoCola2;
-            int largoCola = colaTrabajoN2.size()-1;          
-            if(numProceso > largoCola){
-               numProceso = 0;          
-            }
-            int proc;
-            for(;numProceso<=largoCola;numProceso++){
-                proc = colaTrabajoN2.get(numProceso).numeroBCP;
-                Proceso procesoAEjecutar = obtenerBCP(proc);          
-                /*if(procesoAEjecutar.obtenerPC() <= procesoAEjecutar.obtenerFinMemoria() && procesoAEjecutar.obtenerEstadoProceso()!=BCP.TERMINADO){
-                    trabajo=new Trabajo(1, proc,memoriaVirtual[procesoAEjecutar.obtenerPC()]);
-                    colaImprimir2.add(trabajo);                   
-                } */                             
-            }              
-        }//SALE ELSE       
-    }
-    
     public Nucleo obtenerNucleo1(){
         return nucleo1;
     }
     
     public Nucleo obtenerNucleo2(){
         return nucleo2;
-    }
-    
-    public List<Trabajo> obtenerColaTrabajoN1(){
-        return colaTrabajoN1;
-    }
-    
-    public List<Trabajo> obtenerColaTrabajoN2(){
-        return colaTrabajoN2;
     }
     
     public List<Proceso> obtenerProcesos(){
@@ -358,17 +184,6 @@ public class CPU {
         CPU.TAMANIO_FRAME = frame;
     }
     
-    private Proceso obtenerBCP(int numeroBCP){
-        int numeroProcesos = procesos.size();
-        Proceso proceso;
-        for(int i=0;i<numeroProcesos;i++){
-            proceso=procesos.get(i);
-            if(proceso.obtenerNumeroProceso()==numeroBCP){
-                return proceso;
-            }
-        }return null;
-    }
-    
     /**
      * Se encarga de cargar los procesos del archivo.
      * Valida que los datos sean correctos y si lo son, llama a crear el proceso...
@@ -381,7 +196,7 @@ public class CPU {
         List<String> procesos_totales;
         int linea = 1;
         
-        // Se inicializa la memoria
+        // Se inicializa la memoria según el algoritmo indicado
         ejecutarAlgoritmoMemoria();
        
         try {
@@ -519,9 +334,7 @@ public class CPU {
         nucleo1.asignarQuantum(QUANTUM);
         nucleo2.asignarQuantum(QUANTUM);
         nucleo1.empezarEjecucion();
-        
         nucleo2.empezarEjecucion();
-        
         CPU.EN_EJECUCION = true;
     }
     
@@ -536,6 +349,10 @@ public class CPU {
         controlColor = true;
     }
     
+    /**
+     * Hace el llamado al algoritmo correspondiente de memoria. No está el...
+     * ...dinámica, ya que se crean las particiones en el momento de cargar los procesos
+     */
     private void ejecutarAlgoritmoMemoria(){
         switch (ALGORITMO_MEMORIA) {
             case 0:
@@ -552,6 +369,10 @@ public class CPU {
         }
     }
     
+    /**
+     * Asigna la memoria para el proceso indicado, según el algoritmo elegido
+     * @param proceso 
+     */
     private void asignarMemoriaProceso(Proceso proceso){
         switch (ALGORITMO_MEMORIA) {
             case 0:// Memoria Fija
@@ -571,6 +392,11 @@ public class CPU {
         }
     }
     
+    /**
+     * Crea los frames en la memoria, que serán usados por los procesos.
+     * Además, ajusta los valores de memoria, disco y virual, producto de la...
+     * ...generación de los frames.
+     */
     private void crearFrames(){
         int tamanio = 0;
         int numeroFrame = 0;
@@ -595,9 +421,12 @@ public class CPU {
         }
         CPU.LARGOMEMORIA = nuevoTamanioMemoria;
         CPU.LARGOMEMORIAVIRTUAL = nuevoTamanioMemoria + Bloques.size() - nuevoTamanioMemoria;
-        CPU.LARGODISCO -= CPU.LARGOMEMORIAVIRTUAL - CPU.LARGOMEMORIA;
+        CPU.LARGODISCO = CPU.LARGODISCO / 2 + CPU.LARGOMEMORIAVIRTUAL - CPU.LARGOMEMORIA;
     }
     
+    /**
+     * Crea los segmentos en la memoria indicados por el usuario.
+     */
     private void crearSegmentos(){
         int inicio = 0;
         int cantidadSegmentos = segmentos.length;
@@ -610,6 +439,9 @@ public class CPU {
         }
     }
     
+    /**
+     * Crea los bloques fijos en la memoria del tamaño indicado.
+     */
     private void crearBloquesFijos(){
         int tamanio = 0;
         int inicio = 0;
@@ -630,11 +462,16 @@ public class CPU {
         }
     }
     
+    /**
+     * Crea un bloque del tamaño indicado
+     * @param tamanio
+     * @return 
+     */
     private int[] crearBloqueDinamico(int tamanio){
-        int cantidadBloquesFijos = Bloques.size();
+        int cantidadBloques = Bloques.size();
         Bloque bloque;
         int finBloqueAnterior = 0;
-        for(int i = 0; i < cantidadBloquesFijos; i++){
+        for(int i = 0; i < cantidadBloques; i++){
             bloque = Bloques.get(i);
             finBloqueAnterior = bloque.obtenerInicioFin()[1]+1;// Se suma uno para que no toque memoria de este bloque
         }
@@ -648,6 +485,11 @@ public class CPU {
         }
     }
     
+    /**
+     * Obtiene los frames para un proceso de acuerdo al tamaño necesitado.
+     * @param tamanio
+     * @return 
+     */
     private List<Pair<Integer, Integer>> obtenerFramesParaProceso(int tamanio){
         List<Pair<Integer, Integer>> frames = new ArrayList<>();
         int cantidadFrames = Bloques.size();
@@ -673,6 +515,13 @@ public class CPU {
         return frames;
     }
     
+    /**
+     * Obtiene los limites de un segmento de acuerdo al tamaño indicado.
+     * Trata de encontrar el segmento más optimo para el tamaño indicado, si no..
+     * hay, obtiene el primero disponible.
+     * @param tamanio
+     * @return 
+     */
     private int[] obtenerLimitesMemoriaSegmento(int tamanio){
         int cantidadBloques = Bloques.size();
         Bloque bloque, bloqueLibre = null, bloqueOptimo = null;
@@ -707,6 +556,11 @@ public class CPU {
         return new int[]{ -1, -1};
     }
     
+    /**
+     * Obtiene los límites de un bloque fijo para el tamaño del proceso indicado
+     * @param tamanio
+     * @return 
+     */
     private int[] obtenerLimitesMemoriaFija(int tamanio){
         int cantidadBloquesFijos = Bloques.size();
         Bloque bloque;
@@ -719,6 +573,11 @@ public class CPU {
         }return new int[]{ -1, -1};
     }
     
+    /**
+     * Se encarga de cargar el proceso en la memoria en las posiciones indicada...
+     * por este.
+     * @param proceso 
+     */
     private void cargarProcesoMemoria(Proceso proceso){
         if(CPU.ALGORITMO_MEMORIA == 2){
             List<Pair<Integer, Integer>> frames = proceso.obtenerFrames();
@@ -742,6 +601,12 @@ public class CPU {
         }
     }
     
+    /**
+     * Función llamada por EditorCeldasDisco y EditorCeldasMemoria, para pintar...
+     * ...del color correspondiente la celda.
+     * @param posicion
+     * @return 
+     */
     public static int obtenerColorBloque(int posicion){
         Bloque bloque;
         int cantidadBloques = Bloques.size();

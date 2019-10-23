@@ -31,10 +31,12 @@ public class Bloque {
         }
     }
     
+    /* Retorna los límites del bloque */
     public int[] obtenerInicioFin(){
         return new int[]{ inicio, fin };
     }
     
+    /* Retorna los límites usados dentro del bloque */
     public int[] obtenerLimitesUsados(){
         if(inicio + espacioUsado > fin){
             return new int[]{ inicio, fin };
@@ -43,14 +45,17 @@ public class Bloque {
         }
     }
     
+    /* Retorna si el bloque está siendo usada por algún proceso */
     public Boolean estaOcupado(){
         return ocupado;
     }
     
+    /* Retorna el color con el que se pintará en la interfaz (para hacer distinción entre bloques) */
     public int obtenerIndiceColor(){
         return indiceColor;
     }
     
+    /* Retorna el espacio (tamaño del bloque) */
     public int obtenerEspacioBloque(){
         return fin - inicio + 1;
     }
