@@ -33,6 +33,7 @@ public class CPU {
     static int QUANTUM = 1;
     static int PARTICIONFIJA = 64;
     static int TAMANIO_FRAME = 64;
+    static int LIMITE_TIEMPO_EJECUCION = 80;
     static Boolean EN_EJECUCION = false;
     static String[] memoriaVirtual = new String[LARGOMEMORIAVIRTUAL];
     static String[] memoria = new String[LARGOMEMORIA];
@@ -44,7 +45,7 @@ public class CPU {
     private int[] segmentos;
     
     /* Hilos de Control */
-    private Timer timerControlColasNucleos, timerControlMemoriaVirtual, timerControlProcesos, timerControlEjecucion;
+    private Timer timerControlMemoriaVirtual, timerControlEjecucion;
     
     public CPU(){
         this.nucleo1 = new Nucleo(0);
@@ -299,6 +300,10 @@ public class CPU {
             }else{
                 if(!esNumero(dato)){
                     return false;
+                }else if(cantidad_datos == 4){
+                    if(Integer.valueOf(dato) < 1){
+                        return false;
+                    }
                 }
             }
             cantidad_datos++;
@@ -496,7 +501,7 @@ public class CPU {
         Bloque bloque;
         for(int i = 0; i < cantidadFrames; i++){
             bloque = Bloques.get(i);
-            if(!bloque.ocupado){
+            if(!bloque.estaOcupado()){
                 if(tamanio > 0){
                     if(tamanio >= CPU.TAMANIO_FRAME){
                         bloque.asignarEspacioUsado(CPU.TAMANIO_FRAME);
@@ -505,11 +510,21 @@ public class CPU {
                     }else{
                         bloque.asignarEspacioUsado(tamanio);
                         frames.add(new Pair<>(i, tamanio));
+                        tamanio = 0;
                         break;
                     }
                 }else{
                     break;
                 }
+            }
+        }
+        if(tamanio > 0){
+            /* Si no se pudo cargar todo, entonces libero los frames utilizados */
+            int cantidadFramesLiberar = frames.size();
+            Pair<Integer, Integer> frame;
+            for(int i = 0; i < cantidadFramesLiberar; i++){
+                frame = frames.get(i);
+                Bloques.get(frame.getKey()).asignarEspacioUsado(0);
             }
         }
         return frames;
@@ -549,9 +564,6 @@ public class CPU {
         if(bloqueOptimo != null){
             bloqueOptimo.asignarEspacioUsado(tamanio);
             return bloqueOptimo.obtenerLimitesUsados();
-        }else if(bloqueLibre != null){
-            bloqueLibre.asignarEspacioUsado(tamanio);
-            return bloqueLibre.obtenerLimitesUsados();
         }
         return new int[]{ -1, -1};
     }

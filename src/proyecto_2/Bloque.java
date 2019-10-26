@@ -10,11 +10,11 @@ package proyecto_2;
  * @author Heiner
  */
 public class Bloque {
-    int inicio;
-    int fin;
-    int espacioUsado;
-    Boolean ocupado;
-    int indiceColor; // Variable para pintar las filas del color correspondiente al bloque
+    private int inicio;
+    private int fin;
+    private int espacioUsado;
+    private Boolean ocupado;
+    private int indiceColor; // Variable para pintar las filas del color correspondiente al bloque
 
     public Bloque(int inicio, int fin, int espacioUsado, Boolean ocupado, int indiceColor) {
         this.inicio = inicio;
@@ -26,9 +26,7 @@ public class Bloque {
     
     public void asignarEspacioUsado(int espacio){
         this.espacioUsado = espacio;
-        if(espacio > 0){
-            ocupado = true;
-        }
+        ocupado = espacio > 0;
     }
     
     /* Retorna los límites del bloque */

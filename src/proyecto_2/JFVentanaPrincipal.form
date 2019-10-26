@@ -32,7 +32,7 @@
                       <EmptySpace max="-2" attributes="0"/>
                       <Component id="jPanel4" min="-2" max="-2" attributes="0"/>
                       <EmptySpace max="-2" attributes="0"/>
-                      <Component id="panelConfigAlgoritmos" max="32767" attributes="0"/>
+                      <Component id="panelConfigAlgoritmos" pref="713" max="32767" attributes="0"/>
                   </Group>
                   <Group type="102" attributes="0">
                       <Component id="jPanel3" min="-2" max="-2" attributes="0"/>
@@ -403,9 +403,9 @@
                               <Component id="jLabel4" alignment="0" min="-2" max="-2" attributes="0"/>
                               <Component id="jLabel5" alignment="0" min="-2" max="-2" attributes="0"/>
                           </Group>
+                          <EmptySpace min="-2" pref="6" max="-2" attributes="0"/>
                           <Group type="103" groupAlignment="0" attributes="0">
                               <Group type="102" attributes="0">
-                                  <EmptySpace max="-2" attributes="0"/>
                                   <Group type="103" groupAlignment="0" attributes="0">
                                       <Group type="102" attributes="0">
                                           <Component id="jLPromedioTrNucleo2" min="-2" max="-2" attributes="0"/>
@@ -417,24 +417,23 @@
                                           <Component id="promedioTrTsNucleo2" min="-2" pref="58" max="-2" attributes="0"/>
                                           <EmptySpace max="-2" attributes="0"/>
                                           <Component id="lbMensajePaginacion2" min="-2" max="-2" attributes="0"/>
-                                          <EmptySpace min="0" pref="374" max="32767" attributes="0"/>
                                       </Group>
-                                      <Component id="jspNucleo2" max="32767" attributes="0"/>
+                                      <Group type="102" alignment="0" attributes="0">
+                                          <EmptySpace min="-2" pref="1" max="-2" attributes="0"/>
+                                          <Component id="jLPromedioTrNucleo1" min="-2" max="-2" attributes="0"/>
+                                          <EmptySpace max="-2" attributes="0"/>
+                                          <Component id="promedioTrNucleo1" min="-2" pref="61" max="-2" attributes="0"/>
+                                          <EmptySpace min="-2" pref="28" max="-2" attributes="0"/>
+                                          <Component id="jLPromedioTrTsNucleo1" min="-2" max="-2" attributes="0"/>
+                                          <EmptySpace max="-2" attributes="0"/>
+                                          <Component id="promedioTrTsNucleo1" min="-2" pref="58" max="-2" attributes="0"/>
+                                          <EmptySpace max="-2" attributes="0"/>
+                                          <Component id="lbMensajePaginacion1" min="-2" max="-2" attributes="0"/>
+                                      </Group>
                                   </Group>
-                              </Group>
-                              <Group type="102" alignment="0" attributes="0">
-                                  <EmptySpace min="-2" pref="7" max="-2" attributes="0"/>
-                                  <Component id="jLPromedioTrNucleo1" min="-2" max="-2" attributes="0"/>
-                                  <EmptySpace max="-2" attributes="0"/>
-                                  <Component id="promedioTrNucleo1" min="-2" pref="61" max="-2" attributes="0"/>
-                                  <EmptySpace min="-2" pref="28" max="-2" attributes="0"/>
-                                  <Component id="jLPromedioTrTsNucleo1" min="-2" max="-2" attributes="0"/>
-                                  <EmptySpace max="-2" attributes="0"/>
-                                  <Component id="promedioTrTsNucleo1" min="-2" pref="58" max="-2" attributes="0"/>
-                                  <EmptySpace max="-2" attributes="0"/>
-                                  <Component id="lbMensajePaginacion1" min="-2" max="-2" attributes="0"/>
                                   <EmptySpace min="0" pref="0" max="32767" attributes="0"/>
                               </Group>
+                              <Component id="jspNucleo2" max="32767" attributes="0"/>
                           </Group>
                       </Group>
                   </Group>
@@ -463,25 +462,21 @@
                   </Group>
                   <EmptySpace type="separate" max="-2" attributes="0"/>
                   <Group type="103" groupAlignment="0" attributes="0">
-                      <Group type="102" attributes="0">
-                          <Group type="103" groupAlignment="0" attributes="0">
-                              <Component id="jLabel5" min="-2" max="-2" attributes="0"/>
-                              <Group type="103" alignment="1" groupAlignment="3" attributes="0">
-                                  <Component id="jLPromedioTrTsNucleo2" alignment="3" min="-2" max="-2" attributes="0"/>
-                                  <Component id="promedioTrTsNucleo2" alignment="3" min="-2" max="-2" attributes="0"/>
-                                  <Component id="lbMensajePaginacion2" alignment="3" min="-2" max="-2" attributes="0"/>
-                              </Group>
-                          </Group>
-                          <EmptySpace max="-2" attributes="0"/>
-                          <Group type="103" groupAlignment="0" attributes="0">
-                              <Component id="jspNucleo2" alignment="0" min="-2" pref="208" max="-2" attributes="0"/>
-                              <Component id="jScrollPane6" alignment="0" min="-2" pref="193" max="-2" attributes="0"/>
-                          </Group>
+                      <Component id="jLabel5" min="-2" max="-2" attributes="0"/>
+                      <Group type="103" alignment="0" groupAlignment="3" attributes="0">
+                          <Component id="jLPromedioTrTsNucleo2" alignment="3" min="-2" max="-2" attributes="0"/>
+                          <Component id="lbMensajePaginacion2" alignment="3" min="-2" max="-2" attributes="0"/>
+                          <Component id="promedioTrTsNucleo2" alignment="3" min="-2" max="-2" attributes="0"/>
                       </Group>
-                      <Group type="103" groupAlignment="3" attributes="0">
+                      <Group type="103" alignment="0" groupAlignment="3" attributes="0">
                           <Component id="jLPromedioTrNucleo2" alignment="3" min="-2" max="-2" attributes="0"/>
                           <Component id="promedioTrNucleo2" alignment="3" min="-2" max="-2" attributes="0"/>
                       </Group>
+                  </Group>
+                  <EmptySpace max="-2" attributes="0"/>
+                  <Group type="103" groupAlignment="0" attributes="0">
+                      <Component id="jspNucleo2" alignment="0" min="-2" pref="208" max="-2" attributes="0"/>
+                      <Component id="jScrollPane6" alignment="0" min="-2" pref="193" max="-2" attributes="0"/>
                   </Group>
                   <EmptySpace max="32767" attributes="0"/>
               </Group>

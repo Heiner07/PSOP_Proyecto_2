@@ -111,10 +111,10 @@ public class JFVentanaPrincipal extends javax.swing.JFrame {
         panelNucleo1.removeAll();
         nucleo1.clear();
         
-        panelNucleo1.setLayout(new GridLayout(CPU.PROCESOSPORNUCLEO+1, 80));
+        panelNucleo1.setLayout(new GridLayout(CPU.PROCESOSPORNUCLEO+1, CPU.LIMITE_TIEMPO_EJECUCION));
         for(int i = 0; i < CPU.PROCESOSPORNUCLEO+1; i++){
             List<JLabel> fila = new ArrayList<>();
-            for(int j = 0; j < 80; j++){
+            for(int j = 0; j < CPU.LIMITE_TIEMPO_EJECUCION; j++){
                 if(i == 0){
                     label = new JLabel(" "+String.valueOf(j+1)+" ");
                 }else{
@@ -169,10 +169,10 @@ public class JFVentanaPrincipal extends javax.swing.JFrame {
         panelNucleo2.removeAll();
         nucleo2.clear();
         
-        panelNucleo2.setLayout(new GridLayout(CPU.PROCESOSPORNUCLEO+1, 80));
+        panelNucleo2.setLayout(new GridLayout(CPU.PROCESOSPORNUCLEO+1, CPU.LIMITE_TIEMPO_EJECUCION));
         for(int i = 0; i < CPU.PROCESOSPORNUCLEO+1; i++){
             List<JLabel> fila = new ArrayList<>();
-            for(int j = 0; j < 80; j++){
+            for(int j = 0; j < CPU.LIMITE_TIEMPO_EJECUCION; j++){
                 if(i == 0){
                     label = new JLabel(" "+String.valueOf(j+1)+" ");
                 }else{
@@ -464,20 +464,31 @@ public class JFVentanaPrincipal extends javax.swing.JFrame {
             Proceso proceso;
 
             //Establezco los datos generados hasta el momento según el algoritmo ejecutado
-            for(int i = 0; i < numeroProcesosN1; i++){
+            for(int i = 0; i < numeroProcesosN1 && i < CPU.LIMITE_TIEMPO_EJECUCION; i++){
                 proceso = procesosEjecutandoN1.get(i);
                 if(proceso.obtenerEstadoProceso() != -1){
                     label = nucleo1.get(proceso.obtenerNumeroProceso()).get(i);
                     label.setBackground(Colores.COLORES[proceso.obtenerNumeroProceso()-1]);
                 }
+            }if(numeroProcesosN1 >= CPU.LIMITE_TIEMPO_EJECUCION){
+                JOptionPane.showMessageDialog(this, "La ejecución de los procesos termina después del tiempo de ejecución "+
+                        CPU.LIMITE_TIEMPO_EJECUCION,
+                            "Alerta Núcleo 1",JOptionPane.WARNING_MESSAGE);
+                CPU.EN_EJECUCION = false;
             }
 
-            for(int i = 0; i < numeroProcesosN2; i++){
+            for(int i = 0; i < numeroProcesosN2 && i < CPU.LIMITE_TIEMPO_EJECUCION; i++){
                 proceso = procesosEjecutandoN2.get(i);
                 if(proceso.obtenerEstadoProceso() != -1){
                     label = nucleo2.get(proceso.obtenerNumeroProceso()).get(i);
                     label.setBackground(Colores.COLORES[proceso.obtenerNumeroProceso()-1]);
                 }
+            }
+            if(numeroProcesosN2 >= CPU.LIMITE_TIEMPO_EJECUCION){
+                JOptionPane.showMessageDialog(this, "La ejecución de los procesos termina después del tiempo de ejecución "+
+                        CPU.LIMITE_TIEMPO_EJECUCION,
+                            "Alerta Núcleo 2",JOptionPane.WARNING_MESSAGE);
+                CPU.EN_EJECUCION = false;
             }
         }else{
             btCargarArchivo.setEnabled(true);
@@ -500,6 +511,7 @@ public class JFVentanaPrincipal extends javax.swing.JFrame {
     }
     
     private Boolean configurarValoresDeEjecucion(){
+        cpu.limpiarProcesos();
         int largoMemoria = (int)jspTamanioMemoria.getValue();
         int largoDisco = (int)jspTamanioDisco.getValue();
         switch (algoritmoMemoriaSeleccionado) {
@@ -568,28 +580,36 @@ public class JFVentanaPrincipal extends javax.swing.JFrame {
      * Se encarga de empezar la ejecución y reiniciar el valor de las variables
      */
     private void empezarEjecucion(){
-        cpu.limpiarProcesos();
-        cpu.cargarPrograma(rutaArchivo);
-        /* Según el algoritmo de memoria, se ajusta algunos componentes en la interfaz*/
-        if(algoritmoMemoriaSeleccionado == 2){
-            configurarTablaMemoria();
-            configurarTablaDisco();
-            lbMensajePaginacion1.setVisible(true);
-            lbMensajePaginacion2.setVisible(true);
+        //cpu.limpiarProcesos(); // Lo movi a la funcion configurarValoresEjecucion
+        //Leer los procesos del archivo cargado, (esto se repite por si editaron el archivo una vez cargado)
+        List<String> errores = cpu.cargarPrograma(rutaArchivo);
+        configurarTablaProcesos();
+        if(errores.size() > 0){
+            JOptionPane.showMessageDialog(this, "Se presentaron los siguientes errores:\n"+errores.toString(),
+                        "Error cargando el archivo",JOptionPane.ERROR_MESSAGE);
         }else{
-            lbMensajePaginacion1.setVisible(false);
-            lbMensajePaginacion2.setVisible(false);
-        }
         
-        configurarTablaNucleo1();
-        configurarTablaNucleo2();
-        configurarProcesosNucleos();
-        cpu.empezarEjecucion();
-        btEjecutar.setEnabled(false);
-        btCargarArchivo.setEnabled(false);
-        btUtilizarConfiguracion.setEnabled(false);
-        ultimaActualizacionDisco = false;
-        ultimaActualizacionMemoria = false;
+            /* Según el algoritmo de memoria, se ajusta algunos componentes en la interfaz*/
+            if(algoritmoMemoriaSeleccionado == 2){
+                configurarTablaMemoria();
+                configurarTablaDisco();
+                lbMensajePaginacion1.setVisible(true);
+                lbMensajePaginacion2.setVisible(true);
+            }else{
+                lbMensajePaginacion1.setVisible(false);
+                lbMensajePaginacion2.setVisible(false);
+            }
+
+            configurarTablaNucleo1();
+            configurarTablaNucleo2();
+            configurarProcesosNucleos();
+            cpu.empezarEjecucion();
+            btEjecutar.setEnabled(false);
+            btCargarArchivo.setEnabled(false);
+            btUtilizarConfiguracion.setEnabled(false);
+            ultimaActualizacionDisco = false;
+            ultimaActualizacionMemoria = false;
+        }
     }
 
     /**
@@ -934,9 +954,9 @@ public class JFVentanaPrincipal extends javax.swing.JFrame {
                             .addComponent(jLabel3)
                             .addComponent(jLabel4)
                             .addComponent(jLabel5))
+                        .addGap(6, 6, 6)
                         .addGroup(jPanel9Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                             .addGroup(jPanel9Layout.createSequentialGroup()
-                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                                 .addGroup(jPanel9Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                                     .addGroup(jPanel9Layout.createSequentialGroup()
                                         .addComponent(jLPromedioTrNucleo2)
@@ -947,21 +967,20 @@ public class JFVentanaPrincipal extends javax.swing.JFrame {
                                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                                         .addComponent(promedioTrTsNucleo2, javax.swing.GroupLayout.PREFERRED_SIZE, 58, javax.swing.GroupLayout.PREFERRED_SIZE)
                                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                                        .addComponent(lbMensajePaginacion2)
-                                        .addGap(0, 374, Short.MAX_VALUE))
-                                    .addComponent(jspNucleo2)))
-                            .addGroup(jPanel9Layout.createSequentialGroup()
-                                .addGap(7, 7, 7)
-                                .addComponent(jLPromedioTrNucleo1)
-                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                                .addComponent(promedioTrNucleo1, javax.swing.GroupLayout.PREFERRED_SIZE, 61, javax.swing.GroupLayout.PREFERRED_SIZE)
-                                .addGap(28, 28, 28)
-                                .addComponent(jLPromedioTrTsNucleo1)
-                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                                .addComponent(promedioTrTsNucleo1, javax.swing.GroupLayout.PREFERRED_SIZE, 58, javax.swing.GroupLayout.PREFERRED_SIZE)
-                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                                .addComponent(lbMensajePaginacion1)
-                                .addGap(0, 0, Short.MAX_VALUE)))))
+                                        .addComponent(lbMensajePaginacion2))
+                                    .addGroup(jPanel9Layout.createSequentialGroup()
+                                        .addGap(1, 1, 1)
+                                        .addComponent(jLPromedioTrNucleo1)
+                                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                                        .addComponent(promedioTrNucleo1, javax.swing.GroupLayout.PREFERRED_SIZE, 61, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                        .addGap(28, 28, 28)
+                                        .addComponent(jLPromedioTrTsNucleo1)
+                                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                                        .addComponent(promedioTrTsNucleo1, javax.swing.GroupLayout.PREFERRED_SIZE, 58, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                                        .addComponent(lbMensajePaginacion1)))
+                                .addGap(0, 0, Short.MAX_VALUE))
+                            .addComponent(jspNucleo2))))
                 .addContainerGap())
         );
         jPanel9Layout.setVerticalGroup(
@@ -983,20 +1002,18 @@ public class JFVentanaPrincipal extends javax.swing.JFrame {
                     .addComponent(jScrollPane2, javax.swing.GroupLayout.PREFERRED_SIZE, 193, javax.swing.GroupLayout.PREFERRED_SIZE))
                 .addGap(18, 18, 18)
                 .addGroup(jPanel9Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addGroup(jPanel9Layout.createSequentialGroup()
-                        .addGroup(jPanel9Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                            .addComponent(jLabel5)
-                            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanel9Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                                .addComponent(jLPromedioTrTsNucleo2)
-                                .addComponent(promedioTrTsNucleo2)
-                                .addComponent(lbMensajePaginacion2)))
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addGroup(jPanel9Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                            .addComponent(jspNucleo2, javax.swing.GroupLayout.PREFERRED_SIZE, 208, javax.swing.GroupLayout.PREFERRED_SIZE)
-                            .addComponent(jScrollPane6, javax.swing.GroupLayout.PREFERRED_SIZE, 193, javax.swing.GroupLayout.PREFERRED_SIZE)))
+                    .addComponent(jLabel5)
+                    .addGroup(jPanel9Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                        .addComponent(jLPromedioTrTsNucleo2)
+                        .addComponent(lbMensajePaginacion2)
+                        .addComponent(promedioTrTsNucleo2))
                     .addGroup(jPanel9Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                         .addComponent(jLPromedioTrNucleo2)
                         .addComponent(promedioTrNucleo2)))
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addGroup(jPanel9Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addComponent(jspNucleo2, javax.swing.GroupLayout.PREFERRED_SIZE, 208, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(jScrollPane6, javax.swing.GroupLayout.PREFERRED_SIZE, 193, javax.swing.GroupLayout.PREFERRED_SIZE))
                 .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
         );
 
@@ -1093,7 +1110,7 @@ public class JFVentanaPrincipal extends javax.swing.JFrame {
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                         .addComponent(jPanel4, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addComponent(panelConfigAlgoritmos, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                        .addComponent(panelConfigAlgoritmos, javax.swing.GroupLayout.DEFAULT_SIZE, 713, Short.MAX_VALUE))
                     .addGroup(layout.createSequentialGroup()
                         .addComponent(jPanel3, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
